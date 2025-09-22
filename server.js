@@ -40,8 +40,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// server.js -> Middleware bölümü
 app.use(session({
-    secret: 'bu-benim-cok-gizli-anahtarim-kimse-bilmesin',
+    secret: process.env.SESSION_SECRET, // DEĞİŞİKLİK BURADA
     resave: false,
     saveUninitialized: true
 }));
