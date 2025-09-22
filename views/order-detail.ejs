@@ -1,0 +1,71 @@
+<%- include('partials/header') %>
+
+<div class="main-content">
+    <a href="/admin" class="btn btn-secondary mb-4">
+        <i class="bi bi-arrow-left"></i> Admin Paneline Geri Dön
+    </a>
+
+    <h1>Sipariş Detayı</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header h5">
+            Sipariş Bilgileri
+        </div>
+        <div class="card-body">
+            <p><strong>Sipariş ID:</strong> <%= siparis._id %></p>
+            <p><strong>Müşteri E-postası:</strong> <%= siparis.user.email %></p>
+            <p><strong>Sipariş Tarihi:</strong> <%= new Date(siparis.createdAt).toLocaleString('tr-TR') %></p>
+            <p><strong>Sipariş Tutarı:</strong> <strong><%= formatPrice(siparis.total) %></strong></p>
+            <p><strong>Mevcut Durum:</strong> <strong><%= siparis.status %></strong></p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header h5">
+            Sipariş Edilen Ürünler
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ürün Adı</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% siparis.products.forEach(item => { %>
+                            <tr>
+                                <td><%= item.product ? item.product.isim : 'Ürün bilgisi yok' %></td>
+                                <td><%= item.quantity %></td>
+                                <td><%= item.product ? formatPrice(item.product.fiyat) : '-' %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header h5">
+            Sipariş Durumunu Güncelle
+        </div>
+        <div class="card-body">
+            <form action="/admin/update-order-status/<%= siparis._id %>" method="POST">
+                <div class="mb-3">
+                    <label for="status" class="form-label">Yeni Durum:</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="Beklemede" <%= siparis.status === 'Beklemede' ? 'selected' : '' %>>Beklemede</option>
+                        <option value="Onaylandı" <%= siparis.status === 'Onaylandı' ? 'selected' : '' %>>Onaylandı</option>
+                        <option value="Reddedildi" <%= siparis.status === 'Reddedildi' ? 'selected' : '' %>>Reddedildi</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Durumu Güncelle</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

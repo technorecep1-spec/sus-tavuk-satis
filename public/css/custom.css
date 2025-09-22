@@ -1,0 +1,81 @@
+/* public/css/custom.css - EKSİKSİZ TAM SÜRÜM */
+
+:root {
+    /* Bootstrap'in varsayılan mavi rengini eziyoruz. */
+    --bs-primary: #D9531E; 
+    --bs-primary-rgb: 217, 83, 30;
+
+    /* Linklerin rengini ana renkle aynı yapabiliriz */
+    --bs-link-color: #D9531E;
+    --bs-link-hover-color: #a33f17;
+
+    /* Sitenin genel arka plan rengini biraz daha yumuşak bir tona çekelim */
+    --bs-body-bg: #f8f9fa; 
+    
+    /* Kenar yuvarlaklığını artıralım (Seçenek A) */
+    --bs-border-radius: 0.75rem;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* --- Bootstrap Bileşenlerini Doğrudan Ezme --- */
+
+/* Primary Butonlar (Sepete Ekle, Form Gönder vb.) */
+.btn-primary {
+    --bs-btn-bg: var(--bs-primary);
+    --bs-btn-border-color: var(--bs-primary);
+    --bs-btn-hover-bg: #a33f17;
+    --bs-btn-hover-border-color: #a33f17;
+}
+
+/* Info Butonları (Admin panelindeki mavi 'Oku' butonu gibi) */
+.btn-info {
+    --bs-btn-bg: #6c757d;
+    --bs-btn-border-color: #6c757d;
+    --bs-btn-hover-bg: #5c636a;
+    --bs-btn-hover-border-color: #565e64;
+    --bs-btn-color: white;
+    --bs-btn-hover-color: white;
+}
+
+/* Aktif Sekmeler (Admin Paneli) */
+.nav-tabs .nav-link.active {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: white;
+}
+
+/* Sayfalama (Pagination) Aktif Sayfa */
+.pagination .page-item.active .page-link {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+
+/* Kartlara yumuşak bir geçiş efekti veriyoruz */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* Kullanıcı fare ile kartın üzerine geldiğinde... */
+.card:hover {
+    transform: translateY(-5px); /* Kartı 5 piksel yukarı kaldır */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
+}
+/* public/css/custom.css (en alta ekle) */
+
+/* --- Footer Stilleri --- */
+footer a {
+    text-decoration: none; /* Linklerin altındaki çizgiyi kaldır */
+    transition: color 0.2s ease-in-out;
+}
+
+footer a:hover {
+    color: #ffc107 !important; /* Bootstrap'in sarı (warning) rengi, üzerine gelince */
+}

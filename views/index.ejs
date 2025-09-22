@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div class="px-4 py-5 my-5 text-center">
+    <h1 class="display-5 fw-bold">Wyandotte TR</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">Safkan Silver Wyandotte (Gümüş Benekli) süs tavukları üretimi. Döllü yumurta, civciv ve damızlık ihtiyaçlarınız için en doğru adres.</p>
+    </div>
+</div>
+
+<div class="container px-4 py-5" id="featured-products">
+    <h2 class="pb-2 border-bottom">Öne Çıkan Ürünler</h2>
+    
+    <% if (featuredProducts && featuredProducts.length > 0) { %>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 py-5">
+            <% featuredProducts.forEach(function(urun) { %>
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <a href="/product/<%= urun._id %>" class="product-link">
+                            <img src="<%= urun.resim %>" class="card-img-top" alt="<%= urun.isim %>" style="aspect-ratio: 4/3; object-fit: cover;">
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title"><%= urun.isim %></h5>
+                            <h4 class="price text-end mt-auto pt-2"><%= formatPrice(urun.fiyat) %></h4>
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="/product/<%= urun._id %>" class="btn btn-outline-dark w-100">Detayları Gör</a>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    <% } else { %>
+        <p class="mt-4">Şu anda öne çıkan bir ürün bulunmamaktadır.</p>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

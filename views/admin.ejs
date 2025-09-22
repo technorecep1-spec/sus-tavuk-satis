@@ -1,0 +1,325 @@
+<%- include('partials/header') %>
+
+<div class="main-content">
+    <h1>Admin Paneli</h1>
+    <p>Hoş geldin, <%= user.email %>!</p>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h4>Onay Bekleyen Siparişler</h4>
+            <p class="stat-number"><%= pendingOrderCount %></p>
+        </div>
+        <div class="stat-card">
+            <h4>Toplam Ürün Çeşidi</h4>
+            <p class="stat-number"><%= productCount %></p>
+        </div>
+        <div class="stat-card">
+            <h4>Toplam Kayıtlı Kullanıcı</h4>
+            <p class="stat-number"><%= userCount %></p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mt-4" id="adminTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="add-product-tab" data-bs-toggle="tab" data-bs-target="#addProduct" type="button" role="tab" aria-controls="addProduct" aria-selected="true">Yeni Ürün Ekle</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-products-tab" data-bs-toggle="tab" data-bs-target="#listProducts" type="button" role="tab" aria-controls="listProducts" aria-selected="false">Mevcut Ürünler</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-orders-tab" data-bs-toggle="tab" data-bs-target="#listOrders" type="button" role="tab" aria-controls="listOrders" aria-selected="false">Gelen Siparişler</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-messages-tab" data-bs-toggle="tab" data-bs-target="#listMessages" type="button" role="tab" aria-controls="listMessages" aria-selected="false">Gelen Mesajlar</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-reviews-tab" data-bs-toggle="tab" data-bs-target="#listReviews" type="button" role="tab" aria-controls="listReviews" aria-selected="false">Yorum Yönetimi</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-convos-tab" data-bs-toggle="tab" data-bs-target="#listConvos" type="button" role="tab" aria-controls="listConvos" aria-selected="false">Destek Mesajları</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="list-users-tab" data-bs-toggle="tab" data-bs-target="#listUsers" type="button" role="tab" aria-controls="listUsers" aria-selected="false">Kullanıcı Yönetimi</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabContent">
+        <div class="tab-pane fade show active" id="addProduct" role="tabpanel" aria-labelledby="add-product-tab">
+            <div class="admin-section">
+                <form action="/admin/add-product" method="POST" class="user-form">
+                    <div class="form-group mb-3">
+                        <label for="isim" class="form-label">Ürün Adı:</label>
+                        <input type="text" id="isim" name="isim" required class="form-control">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="aciklama" class="form-label">Açıklama:</label>
+                        <textarea id="aciklama" name="aciklama" rows="3" required class="form-control"></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="fiyat" class="form-label">Fiyat:</label>
+                        <input type="text" id="fiyat" name="fiyat" required class="form-control" placeholder="Örn: 15000">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="stok" class="form-label">Stok Adedi:</label>
+                        <input type="number" id="stok" name="stok" required min="0" value="0" class="form-control">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="resim" class="form-label">Resim URL'si:</label>
+                        <input type="text" id="resim" name="resim" placeholder="https://ornekresim.com/resim.jpg" required class="form-control">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="isFeatured" id="isFeaturedAdd">
+                        <label class="form-check-label" for="isFeaturedAdd">
+                            Bu ürünü ana sayfada öne çıkar
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Ürünü Ekle</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listProducts" role="tabpanel" aria-labelledby="list-products-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ürün Adı</th>
+                            <th>Fiyat</th>
+                            <th>Stok</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (urunler && urunler.length > 0) { %>
+                            <% urunler.forEach(urun => { %>
+                                <tr>
+                                    <td><%= urun.isim %></td>
+                                    <td><%= formatPrice(urun.fiyat) %></td>
+                                    <td><%= urun.stok %> Adet</td>
+                                    <td>
+                                        <a href="/admin/edit-product/<%= urun._id %>" class="btn btn-warning btn-sm">Düzenle</a>
+                                        <a href="/admin/delete-product/<%= urun._id %>" class="btn btn-danger btn-sm" onclick="return confirm('Bu ürünü kalıcı olarak silmek istediğinize emin misiniz?');">Sil</a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4">Henüz ürün eklenmemiş.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listOrders" role="tabpanel" aria-labelledby="list-orders-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sipariş Tarihi</th>
+                            <th>Müşteri E-postası</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (siparisler && siparisler.length > 0) { %>
+                            <% siparisler.forEach(siparis => { %>
+                                <tr>
+                                    <td><%= new Date(siparis.createdAt).toLocaleDateString('tr-TR') %></td>
+                                    <td><%= siparis.user.email %></td>
+                                    <td><%= siparis.status %></td>
+                                    <td>
+                                        <a href="/admin/order/<%= siparis._id %>" class="btn btn-info btn-sm">Detay Gör</a>
+                                        <a href="/admin/new-message?userId=<%= siparis.user._id %>" class="btn btn-primary btn-sm">Mesaj Gönder</a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4">Henüz yeni sipariş yok.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listMessages" role="tabpanel" aria-labelledby="list-messages-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Gönderen</th>
+                            <th>Konu</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (messages && messages.length > 0) { %>
+                            <% messages.forEach(msg => { %>
+                                <tr>
+                                    <td><%= new Date(msg.createdAt).toLocaleDateString('tr-TR') %></td>
+                                    <td><%= msg.name %> (<%= msg.email %>)</td>
+                                    <td><%= msg.subject %></td>
+                                    <td>
+                                        <button class="btn btn-info btn-sm btn-read-message"
+                                            data-bs-toggle="modal" data-bs-target="#messageModal"
+                                            data-name="<%= msg.name %>"
+                                            data-email="<%= msg.email %>"
+                                            data-subject="<%= msg.subject %>"
+                                            data-message="<%= msg.message %>">
+                                            Oku
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4">Gelen mesaj kutusu boş.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listReviews" role="tabpanel" aria-labelledby="list-reviews-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Kullanıcı</th>
+                            <th>Puan</th>
+                            <th style="width: 30%;">Yorum</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (reviews && reviews.length > 0) { %>
+                            <% reviews.forEach(review => { %>
+                                <tr>
+                                    <td><%= review.product ? review.product.isim : 'Silinmiş Ürün' %></td>
+                                    <td><%= review.user ? review.user.email : 'Silinmiş Kullanıcı' %></td>
+                                    <td><%= review.rating %> / 5</td>
+                                    <td><%= review.comment.substring(0, 50) %>...</td>
+                                    <td>
+                                        <% if (review.isApproved) { %>
+                                            <span class="badge bg-success">Onaylandı</span>
+                                        <% } else { %>
+                                            <span class="badge bg-warning text-dark">Onay Bekliyor</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (!review.isApproved) { %>
+                                            <form action="/admin/review/approve/<%= review._id %>" method="POST" style="display: inline;">
+                                                <button type="submit" class="btn btn-success btn-sm">Onayla</button>
+                                            </form>
+                                        <% } %>
+                                        <form action="/admin/review/delete/<%= review._id %>" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                                        </form>
+                                        <a href="/admin/new-message?userId=<%= review.user._id %>" class="btn btn-primary btn-sm mt-1 d-block">Mesaj Gönder</a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6">Henüz hiç yorum yapılmamış.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listConvos" role="tabpanel" aria-labelledby="list-convos-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı</th>
+                            <th>Konu</th>
+                            <th>Son Güncelleme</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (conversations && conversations.length > 0) { %>
+                            <% conversations.forEach(convo => { %>
+                                <tr>
+                                    <td><%= convo.user.email %></td>
+                                    <td><%= convo.subject %></td>
+                                    <td><%= new Date(convo.updatedAt).toLocaleString('tr-TR') %></td>
+                                    <td><a href="/message/<%= convo._id %>" class="btn btn-info btn-sm">Görüntüle</a></td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr><td colspan="4">Destek mesajı bulunmuyor.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="listUsers" role="tabpanel" aria-labelledby="list-users-tab">
+            <div class="admin-section">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ad Soyad</th>
+                            <th>E-posta</th>
+                            <th>Kayıt Tarihi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (users && users.length > 0) { %>
+                            <% users.forEach(user => { %>
+                                <tr>
+                                    <td><%= user.firstName %> <%= user.lastName %></td>
+                                    <td><%= user.email %></td>
+                                    <td><%= new Date(user._id.getTimestamp()).toLocaleDateString('tr-TR') %></td>
+                                    <td>
+                                        <a href="/admin/user/<%= user._id %>" class="btn btn-info btn-sm">Detayları Gör</a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4">Kayıtlı kullanıcı bulunmuyor.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="messageModalLabel">Mesaj Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Gönderen:</strong> <span id="modalSenderName"></span> (<span id="modalSenderEmail"></span>)</p>
+                <p><strong>Konu:</strong> <span id="modalSubject"></span></p>
+                <hr>
+                <p id="modalMessageContent"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

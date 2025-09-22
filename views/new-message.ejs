@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="user-form">
+            <h1 class="text-center mb-4">Yeni Mesaj Gönder</h1>
+            <p><strong>Alıcı:</strong> <%= recipientEmail %></p>
+            <form action="/admin/new-message" method="POST">
+                <input type="hidden" name="userId" value="<%= recipientId %>">
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Konu:</label>
+                    <input type="text" id="subject" name="subject" required class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Mesajınız:</label>
+                    <textarea name="message" id="message" rows="6" required class="form-control"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Gönder</button>
+            </form>
+        </div>
+    </div>
+</div>
+<%- include('partials/footer') %>

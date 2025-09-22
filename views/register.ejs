@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="user-form">
+            <h1 class="text-center mb-4">Kayıt Ol</h1>
+            <form action="/register" method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="firstName" class="form-label">Adınız:</label>
+                        <input type="text" id="firstName" name="firstName" required class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="lastName" class="form-label">Soyadınız:</label>
+                        <input type="text" id="lastName" name="lastName" required class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-posta Adresi:</label>
+                    <input type="email" id="email" name="email" required class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">Telefon Numarası: (İsteğe bağlı)</label>
+                    <input type="tel" id="phone" name="phone" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">Adres: (İsteğe bağlı)</label>
+                    <textarea id="address" name="address" rows="3" class="form-control"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="sifre" class="form-label">Şifre:</label>
+                    <input type="password" id="sifre" name="password" required class="form-control">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Kayıt Ol</button>
+            </form>
+            <p class="text-center mt-3">
+                Zaten bir hesabınız var mı? <a href="/login">Giriş Yapın</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

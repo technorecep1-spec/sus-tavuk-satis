@@ -1,0 +1,75 @@
+/* public/css/style.css - En Güncel ve Temiz Hali */
+
+/* --- Genel Sayfa Stilleri --- */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+/* --- Arama Kutusu Stilleri --- */
+.search-container {
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.search-form { display: flex; gap: 10px; }
+.search-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+.search-button { background-color: #333; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
+.search-button:hover { background-color: #5bafc4; }
+
+/* --- Kullanıcı Form Stilleri --- */
+.user-form {
+    margin: 20px 0;
+    padding: 30px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- Admin Paneli Stilleri --- */
+.admin-section { background-color: #fff; padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.admin-section h2 { margin-top: 0; border-bottom: 2px solid #f4f4f4; padding-bottom: 10px; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table th, .admin-table td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+.admin-table th { background-color: #f4f4f4; }
+
+/* --- Ürün Link Stilleri --- */
+.product-link { text-decoration: none; color: inherit; }
+
+/* --- Admin Dashboard Kart Stilleri --- */
+.dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.stat-card { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+.stat-card h4 { margin: 0 0 10px 0; font-size: 1em; color: #666; }
+.stat-card .stat-number { margin: 0; font-size: 2.5em; font-weight: bold; color: #333; }
+
+/* --- Sayfalama (Pagination) Stilleri --- */
+.pagination-container { display: flex; justify-content: center; margin-top: 30px; padding-bottom: 20px; }
+.pagination { list-style: none; padding: 0; margin: 0; display: flex; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+.page-item { margin: 0; }
+.page-link { display: block; padding: 10px 15px; background-color: #fff; color: #333; text-decoration: none; border-left: 1px solid #ddd; transition: background-color 0.3s; }
+.page-item:first-child .page-link { border-left: none; }
+.page-link:hover { background-color: #f4f4f4; }
+.page-item.active .page-link { background-color: #333; color: #fff; cursor: default; }
+
+/* --- Yorum Bölümü Stilleri --- */
+.review-section { margin-top: 40px; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.review-card { border-bottom: 1px solid #eee; padding: 15px 0; }
+.review-card:last-child { border-bottom: none; }
+
+/* --- Mesajlaşma Stilleri --- */
+.message-thread { margin-bottom: 20px; }
+.message-card { padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; max-width: 70%; }
+.message-card.sent { background-color: #dcf8c6; margin-left: auto; text-align: right; }
+.message-card.received { background-color: #f1f0f0; margin-right: auto; }
+.message-content { margin: 0; }
+.message-date { font-size: 0.75em; color: #888; }
+
+/* --- Alert Mesajları --- */
+.alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+.alert.success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }

@@ -1,0 +1,44 @@
+<%- include('partials/header') %>
+
+<div class="main-content">
+    <h1>Siparişlerim</h1>
+    
+    <% if (siparisler && siparisler.length > 0) { %>
+        <div class="card shadow-sm p-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ürünler</th>
+                            <th>Sipariş Tarihi</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% siparisler.forEach(siparis => { %>
+                            <tr>
+                                <td>
+                                    <ul class="list-unstyled mb-0">
+                                        <% siparis.products.forEach(item => { %>
+                                            <li>
+                                                <%= item.product ? item.product.isim : 'Ürün bilgisi yok' %> (x<%= item.quantity %>)
+                                            </li>
+                                        <% }); %>
+                                    </ul>
+                                </td>
+                                <td><%= new Date(siparis.createdAt).toLocaleDateString('tr-TR') %></td>
+                                <td><%= formatPrice(siparis.total) %></td>
+                                <td><span class="badge bg-info"><%= siparis.status %></span></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } else { %>
+        <div class="alert alert-info">Henüz hiç sipariş vermediniz.</div>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>
