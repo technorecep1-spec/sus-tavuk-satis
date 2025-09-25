@@ -94,3 +94,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     color: #ffffff;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
+/* public/css/custom.css (en alta ekle) */
+
+/* --- Ana Sayfa Başlık Rengi Düzeltmesi --- */
+#featured-products h2 {
+    color: #ffffff; /* veya #f8f9fa gibi hafif kırık bir beyaz */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
