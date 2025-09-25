@@ -6,20 +6,16 @@
 
     <meta name="google-site-verification" content="KHSFAReLDXD2VuOrZPWv7z82rfRuSEcokRHZETMspJA" />
     <title><%= pageTitle %></title>
-    
     <meta name="description" content="Safkan Silver Wyandotte (Gümüş Benekli) süs tavukları üretimi. Döllü yumurta, civciv ve damızlık ihtiyaçlarınız için en doğru adres.">
-    
     <meta name="keywords" content="silver wyandotte, gümüş benekli wyandotte, süs tavuğu, döllü yumurta, wyandotte civciv, safkan tavuk, wyandotte horoz">
-    
     <meta name="robots" content="index, follow">
-    
     <link rel="canonical" href="https://wyandottetr.onrender.com/">
-
     <meta property="og:title" content="<%= pageTitle %>">
     <meta property="og:description" content="Safkan Silver Wyandotte (Gümüş Benekli) süs tavukları üretimi.">
     <meta property="og:image" content="https://wyandottetr.onrender.com/images/Kumes.webp">
     <meta property="og:url" content="https://wyandottetr.onrender.com/">
     <meta property="og:type" content="website">
+    
     <link rel="icon" type="image/png" href="/images/favicon.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,10 +27,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <link rel="stylesheet" href="/css/style.css"> 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/css/lightgallery.min.css" integrity="sha512-F2E+YYE1gkt0T5TVajAslgDfTEUQKtlu4ralVqUBEPPcNQRJSvcAaVLGNhxS2pTcRxVGWUDVXYRs8b2XIviigA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
     <link rel="stylesheet" href="/css/custom.css"> 
 </head>
 <body>
-
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Wyandotte TR</a>
@@ -43,25 +41,15 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Ana Sayfa</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/urunler">Ürünler</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/iletisim">İletişim</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="/">Ana Sayfa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/urunler">Ürünler</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/iletisim">İletişim</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/galeri">Galeri</a></li>
                 </ul>
-
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
                     <% if (user) { %>
                         <% if (!user.isAdmin) { %>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/cart">
-                                    <i class="bi bi-cart-fill"></i> Sepetim (<%= session.cart ? session.cart.length : 0 %>)
-                                </a>
-                            </li>
+                            <li class="nav-item"><a class="nav-link" href="/cart"><i class="bi bi-cart-fill"></i> Sepetim (<%= session.cart ? session.cart.length : 0 %>)</a></li>
                         <% } %>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -80,16 +68,11 @@
                             </ul>
                         </li>
                     <% } else { %>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login">Giriş Yap</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register">Kayıt Ol</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="/login">Giriş Yap</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/register">Kayıt Ol</a></li>
                     <% } %>
                 </ul>
             </div>
         </div>
     </nav>
-
     <main class="container my-4">

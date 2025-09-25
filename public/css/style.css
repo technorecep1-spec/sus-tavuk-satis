@@ -11,15 +11,15 @@ body {
 
 /* --- Arama Kutusu Stilleri --- */
 .search-container {
-    margin-bottom: 20px;
-    background-color: #fff;
-    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #212529;
+    padding: 5px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .search-form { display: flex; gap: 10px; }
 .search-input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
-.search-button { background-color: #333; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
+.search-button { background-color: #D9531E; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
 .search-button:hover { background-color: #5bafc4; }
 
 /* --- Kullanıcı Form Stilleri --- */

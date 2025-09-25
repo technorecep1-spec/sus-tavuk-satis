@@ -71,7 +71,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
 
 /* Kullanıcı fare ile kartın üzerine geldiğinde... */
 .card:hover {
-    transform: translateY(-5px); /* Kartı 5 piksel yukarı kaldır */
+    transform: translateY(-14px); /* Kartı 5 piksel yukarı kaldır */
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
 }
 /* public/css/custom.css (en alta ekle) */
@@ -116,4 +116,32 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
 .review-section p a {
     color: var(--bs-primary);
     font-weight: bold;
+}
+/* public/css/custom.css dosyasının en sonuna ekleyin */
+
+/* --- Ana Sayfa Öne Çıkan Ürün Butonları --- */
+#featured-products .card .btn {
+    background-color: transparent;
+    color: var(--bs-primary); /* Ana turuncu renk */
+    border-color: var(--bs-primary); /* Ana turuncu renk */
+    font-weight: bold;
+}
+
+#featured-products .card .btn:hover {
+    background-color: var(--bs-primary); /* Ana turuncu renk */
+    color: #ffffff; /* Beyaz renk */
+}
+/* public/css/custom.css dosyasının en sonuna ekleyin */
+
+/* --- Navbar Link Beyaz Renk ve Büyüme Efekti --- */
+.navbar .navbar-nav .nav-link {
+    color: #ffffff; /* Yazıları bembeyaz yapar */
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out; /* Büyüme efektini yumuşatır */
+}
+
+/* Fareyle üzerine gelince */
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-nav .nav-link:focus {
+    transform: scale(1.06); /* Yazıyı %10 büyütür */
 }

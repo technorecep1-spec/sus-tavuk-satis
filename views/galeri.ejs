@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4">Fotoğraf Galerimiz</h1>
+        <p class="lead text-muted">Safkan Silver Wyandotte sürümüzden en güzel kareler.</p>
+    </div>
+
+    <div class="row" id="lightgallery">
+
+        <% if (images && images.length > 0) { %>
+            <% images.forEach(image => { %>
+                <a href="<%= image.imageUrl %>" class="col-lg-4 col-md-6 mb-4" data-sub-html="<h4><%= image.title %></h4>">
+                    <img class="img-fluid img-thumbnail" src="<%= image.imageUrl %>" alt="<%= image.title %>">
+                </a>
+            <% }); %>
+        <% } else { %>
+            <div class="col-12">
+                <p class="text-center">Galeride henüz sergilenecek bir resim bulunmuyor.</p>
+            </div>
+        <% } %>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/2.7.2/lightgallery.min.js" integrity="sha512-jEJ0GvGC0ZvKQGSGSQwi++GG7bAQWod3wqzvpJRUfxM0InZdFPXBpcbIOy_V2aUyAmVkFyfAtca32qvSGg0doQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    // Sadece sayfada resim varsa galeriyi çalıştır
+    if (document.getElementById('lightgallery').children.length > 0) {
+        lightGallery(document.getElementById('lightgallery'), {
+            selector: 'a'
+        });
+    }
+</script>
+
+
+<%- include('partials/footer') %>
