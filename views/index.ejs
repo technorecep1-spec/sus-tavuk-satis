@@ -10,7 +10,7 @@
 <div class="container px-4 py-5" id="featured-products">
     <h2 class="pb-2 border-bottom">Öne Çıkan Ürünler</h2>
     
-    <% if (featuredProducts && featuredProducts.length > 0) { %>
+    <% if (typeof featuredProducts !== 'undefined' && featuredProducts.length > 0) { %>
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 py-5">
             <% featuredProducts.forEach(function(urun) { %>
                 <div class="col">
@@ -23,7 +23,7 @@
                             <h4 class="price text-end mt-auto pt-2"><%= formatPrice(urun.fiyat) %></h4>
                         </div>
                         <div class="card-footer bg-transparent border-top-0">
-                            <a href="/product/<%= urun._id %>" class="btn btn-outline-dark w-100">Detayları Gör</a>
+                            <a href="/product/<%= urun._id %>" class="btn btn-outline-primary w-100">Detayları Gör</a>
                         </div>
                     </div>
                 </div>
