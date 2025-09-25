@@ -74,3 +74,23 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     transform: translateY(-5px); /* Kartı 5 piksel yukarı kaldır */
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
 }
+/* public/css/custom.css (en alta ekle) */
+
+/* --- Okunabilirlik ve Kontrast İyileştirmeleri --- */
+
+/* Ana içerik alanındaki genel metin rengini beyaza çevirelim */
+/* Not: Bu kural, .card gibi kendi arka planı olan bileşenlerin içini etkilemez */
+.main-content {
+    color: #f8f9fa; /* Hafif kırık bir beyaz */
+}
+
+/* Ana başlıları daha belirgin yapalım */
+.main-content > h1, .main-content > h2 {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Metne hafif gölge ekleyerek okunabilirliği artırır */
+}
+
+/* Ana sayfadaki karşılama metni için özel stil */
+.display-5, .lead {
+    color: #ffffff;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
