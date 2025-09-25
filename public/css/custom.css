@@ -1,4 +1,4 @@
-/* public/css/custom.css - EKSİKSİZ TAM SÜRÜM */
+/* public/css/custom.css - EKSİKSİZ NİHAİ SÜRÜM */
 
 :root {
     /* Bootstrap'in varsayılan mavi rengini eziyoruz. */
@@ -12,12 +12,19 @@
     /* Sitenin genel arka plan rengini biraz daha yumuşak bir tona çekelim */
     --bs-body-bg: #f8f9fa; 
     
-    /* Kenar yuvarlaklığını artıralım (Seçenek A) */
+    /* Kenar yuvarlaklığını artıralım (Yumuşak ve Yuvarlak) */
     --bs-border-radius: 0.75rem;
 }
 
 body {
     font-family: 'Lato', sans-serif;
+    
+    /* Arka Plan Stilleri */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://Wyandotte.b-cdn.net/K%C3%BCmes.webp');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
@@ -34,7 +41,7 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     --bs-btn-hover-border-color: #a33f17;
 }
 
-/* Info Butonları (Admin panelindeki mavi 'Oku' butonu gibi) */
+/* Info Butonları (Admin panelindeki 'Görüntüle' butonu gibi) */
 .btn-info {
     --bs-btn-bg: #6c757d;
     --bs-btn-border-color: #6c757d;
@@ -57,7 +64,6 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     border-color: var(--bs-primary);
 }
 
-
 /* Kartlara yumuşak bir geçiş efekti veriyoruz */
 .card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -67,15 +73,4 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
 .card:hover {
     transform: translateY(-5px); /* Kartı 5 piksel yukarı kaldır */
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
-}
-/* public/css/custom.css (en alta ekle) */
-
-/* --- Footer Stilleri --- */
-footer a {
-    text-decoration: none; /* Linklerin altındaki çizgiyi kaldır */
-    transition: color 0.2s ease-in-out;
-}
-
-footer a:hover {
-    color: #ffc107 !important; /* Bootstrap'in sarı (warning) rengi, üzerine gelince */
 }
