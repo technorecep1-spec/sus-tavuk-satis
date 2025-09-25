@@ -1,4 +1,4 @@
-// server.js - EKSİKSİZ TAM SÜRÜM (Fiyat Formatlama ve Adet Seçimi Dahil)
+// server.js - EKSİKSİZ TAM SÜRÜM (Browser Caching Dahil)
 
 // 1. Gerekli Paketleri Dahil Etme
 const express = require('express');
@@ -21,7 +21,7 @@ const sendEmail = require('./utils/sendEmail');
 
 // 2. Express Uygulamasını Başlatma ve Port Belirleme
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 3. Veritabanına Bağlanma
 const connectDB = async () => {
@@ -36,13 +36,12 @@ const connectDB = async () => {
 connectDB();
 
 // 4. Express Ayarları ve Middleware'ler
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-// server.js -> Middleware bölümü
 app.use(session({
-    secret: process.env.SESSION_SECRET, // DEĞİŞİKLİK BURADA
+    secret: process.env.SESSION_SECRET || 'bu-benim-cok-gizli-anahtarim-kimse-bilmesin',
     resave: false,
     saveUninitialized: true
 }));
@@ -52,21 +51,16 @@ app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.success_msg = req.flash('success_msg');
     res.locals.error_msg = req.flash('error_msg');
-    
-    // Fiyat formatlama yardımcı fonksiyonu
     res.locals.formatPrice = (price) => {
         if (price === null || price === undefined) return '0 ₺';
         const number = parseFloat(String(price).replace(/[^0-9.,]/g, '').replace(',', '.'));
-        if (isNaN(number)) return price;
+        if (isNaN(number)) return String(price);
         return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(number);
     };
-
     next();
 });
 
 // 5. Rotalar
-// ... (Tüm rotalarınız burada, hiçbir değişiklik olmadan devam ediyor)
-// Örnek olarak, rotaların tamamını aşağıya ekliyorum.
 
 // -- Genel Sayfalar --
 app.get('/', async (req, res) => {
@@ -293,7 +287,7 @@ app.get('/cart', (req, res) => {
     const cart = req.session.cart || [];
     let cartTotal = 0;
     const processedCart = cart.map(item => {
-        const priceAsNumber = parseFloat(item.product.fiyat.replace(/[^0-9]/g, ''));
+        const priceAsNumber = parseFloat(String(item.product.fiyat).replace(/[^0-9]/g, ''));
         const total = priceAsNumber * item.quantity;
         cartTotal += total;
         return { ...item, total: total };
@@ -321,7 +315,7 @@ app.post('/checkout', async (req, res) => {
         await Promise.all(stockUpdatePromises);
         let cartTotal = 0;
         const orderProducts = cart.map(item => {
-            const priceAsNumber = parseFloat(item.product.fiyat.replace(/[^0-9]/g, ''));
+            const priceAsNumber = parseFloat(String(item.product.fiyat).replace(/[^0-9]/g, ''));
             cartTotal += priceAsNumber * item.quantity;
             return { product: item.product._id, quantity: item.quantity };
         });
@@ -338,9 +332,11 @@ app.post('/checkout', async (req, res) => {
 // -- Kullanıcı İşlemleri ve Şifre Sıfırlama Rotaları --
 app.get('/login', (req, res) => { res.render('login'); });
 app.get('/register', (req, res) => { res.render('register'); });
+
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password');
 });
+
 app.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -364,6 +360,7 @@ app.post('/forgot-password', async (req, res) => {
         res.redirect('/forgot-password');
     }
 });
+
 app.get('/reset-password/:token', async (req, res) => {
     try {
         const resetToken = req.params.token;
@@ -383,6 +380,7 @@ app.get('/reset-password/:token', async (req, res) => {
         res.redirect('/forgot-password');
     }
 });
+
 app.post('/reset-password/:token', async (req, res) => {
     try {
         const resetToken = req.params.token;
@@ -413,6 +411,7 @@ app.post('/reset-password/:token', async (req, res) => {
         res.redirect('/forgot-password');
     }
 });
+
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -431,6 +430,7 @@ app.post('/login', async (req, res) => {
         res.status(500).send('Sunucu hatası');
     }
 });
+
 app.post('/register', async (req, res) => {
     const { firstName, lastName, email, phone, address, password } = req.body;
     try {
@@ -448,9 +448,10 @@ app.post('/register', async (req, res) => {
         res.redirect('/login');
     } catch (err) {
         console.error('Register sırasında hata:', err);
-        res.status(500).send('Sunucu Hatası');
+        res.status(500).send('Sunucu hatası');
     }
 });
+
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) { return res.redirect('/'); }
@@ -480,6 +481,7 @@ app.get('/admin', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/add-product', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     const { isim, aciklama, fiyat, resim, stok } = req.body;
@@ -493,6 +495,7 @@ app.post('/admin/add-product', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.get('/admin/delete-product/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -503,6 +506,7 @@ app.get('/admin/delete-product/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.get('/admin/edit-product/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -514,6 +518,7 @@ app.get('/admin/edit-product/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/edit-product/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -526,6 +531,7 @@ app.post('/admin/edit-product/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.get('/admin/order/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -537,6 +543,7 @@ app.get('/admin/order/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/update-order-status/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -557,6 +564,7 @@ app.post('/admin/update-order-status/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/review/approve/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -567,6 +575,7 @@ app.post('/admin/review/approve/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/review/delete/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -577,6 +586,7 @@ app.post('/admin/review/delete/:id', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.get('/admin/new-message', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -591,6 +601,7 @@ app.get('/admin/new-message', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.post('/admin/new-message', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) { return res.redirect('/login'); }
     try {
@@ -610,6 +621,7 @@ app.post('/admin/new-message', async (req, res) => {
         res.status(500).send('Sunucu Hatası');
     }
 });
+
 app.get('/admin/user/:id', async (req, res) => {
     if (!req.session.user || !req.session.user.isAdmin) {
         return res.redirect('/login');
