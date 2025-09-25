@@ -1,25 +1,16 @@
 /* public/css/custom.css - EKSİKSİZ NİHAİ SÜRÜM */
 
 :root {
-    /* Bootstrap'in varsayılan mavi rengini eziyoruz. */
     --bs-primary: #D9531E; 
     --bs-primary-rgb: 217, 83, 30;
-
-    /* Linklerin rengini ana renkle aynı yapabiliriz */
     --bs-link-color: #D9531E;
     --bs-link-hover-color: #a33f17;
-
-    /* Sitenin genel arka plan rengini biraz daha yumuşak bir tona çekelim */
     --bs-body-bg: #f8f9fa; 
-    
-    /* Kenar yuvarlaklığını artıralım (Yumuşak ve Yuvarlak) */
     --bs-border-radius: 0.75rem;
 }
 
 body {
     font-family: 'Lato', sans-serif;
-    
-    /* Arka Plan Stilleri */
     background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://Wyandotte.b-cdn.net/K%C3%BCmes.webp');
     background-size: cover;
     background-position: center center;
@@ -32,16 +23,12 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
 }
 
 /* --- Bootstrap Bileşenlerini Doğrudan Ezme --- */
-
-/* Primary Butonlar (Sepete Ekle, Form Gönder vb.) */
 .btn-primary {
     --bs-btn-bg: var(--bs-primary);
     --bs-btn-border-color: var(--bs-primary);
     --bs-btn-hover-bg: #a33f17;
     --bs-btn-hover-border-color: #a33f17;
 }
-
-/* Info Butonları (Admin panelindeki 'Görüntüle' butonu gibi) */
 .btn-info {
     --bs-btn-bg: #6c757d;
     --bs-btn-border-color: #6c757d;
@@ -50,15 +37,11 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     --bs-btn-color: white;
     --bs-btn-hover-color: white;
 }
-
-/* Aktif Sekmeler (Admin Paneli) */
 .nav-tabs .nav-link.active {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
     color: white;
 }
-
-/* Sayfalama (Pagination) Aktif Sayfa */
 .pagination .page-item.active .page-link {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
@@ -68,36 +51,30 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
 .card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
-
-/* Kullanıcı fare ile kartın üzerine geldiğinde... */
 .card:hover {
-    transform: translateY(-5px); /* Kartı 5 piksel yukarı kaldır */
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
-/* public/css/custom.css (en alta ekle) */
 
 /* --- Okunabilirlik ve Kontrast İyileştirmeleri --- */
-
-/* Ana içerik alanındaki genel metin rengini beyaza çevirelim */
-/* Not: Bu kural, .card gibi kendi arka planı olan bileşenlerin içini etkilemez */
 .main-content {
-    color: #f8f9fa; /* Hafif kırık bir beyaz */
+    color: #f8f9fa; 
 }
-
-/* Ana başlıları daha belirgin yapalım */
-.main-content > h1, .main-content > h2 {
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Metne hafif gölge ekleyerek okunabilirliği artırır */
-}
-
-/* Ana sayfadaki karşılama metni için özel stil */
-.display-5, .lead {
+.main-content > h1, 
+#featured-products h2,
+.main-content .lead {
     color: #ffffff;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
-/* public/css/custom.css (en alta ekle) */
 
-/* --- Ana Sayfa Başlık Rengi Düzeltmesi --- */
-#featured-products h2 {
-    color: #ffffff; /* veya #f8f9fa gibi hafif kırık bir beyaz */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+/* --- Yorum Bölümü Okunabilirlik Düzeltmesi --- */
+.review-section {
+    color: #333;
+}
+.review-section h3 {
+    color: #212529;
+}
+.review-section p a {
+    color: var(--bs-primary);
+    font-weight: bold;
 }
