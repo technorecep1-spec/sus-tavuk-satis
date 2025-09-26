@@ -65,5 +65,15 @@
 <script src="/js/main.js"></script>
 <script src="/js/admin.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/photoswipe@5/dist/photoswipe.esm.js" type="module"></script>
+<script type="module">
+    import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5/dist/photoswipe-lightbox.esm.js';
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: '#product-gallery',
+      children: 'a',
+      pswpModule: () => import('https://unpkg.com/photoswipe@5/dist/photoswipe.esm.js')
+    });
+    lightbox.init();
+</script>
 </body>
 </html>

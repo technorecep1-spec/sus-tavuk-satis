@@ -1,11 +1,11 @@
 <%- include('partials/header') %>
 
 <div class="main-content">
-    <h1>Ürünlerimiz</h1>
-    <div class="search-container">
+  <div class="products-header">
+        <h1>Ürünlerimiz</h1>
         <form action="/urunler" method="GET" class="search-form">
-            <input type="text" name="search" placeholder="Ürün ara..." class="search-input" value="<%= searchTerm %>">
-            <button type="submit" class="search-button">Ara</button>
+            <input type="text" name="search" class="form-control" placeholder="Ürün ara..." value="<%= searchTerm %>">
+            <button type="submit" class="btn btn-primary">Ara</button>
         </form>
     </div>
     <% if (urunler && urunler.length > 0) { %>

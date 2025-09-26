@@ -1,4 +1,5 @@
-// models/Order.js - GÜNCELLENDİ
+// models/Order.js - GÜNCELLENECEK SON HALİ
+
 const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
@@ -7,11 +8,11 @@ const OrderSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    // Artık bir ürün dizisi tutuyoruz
     products: [{
         product: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Product',
+            // ÖNEMLİ NOT: Ref adının 'Product' olduğundan emin ol, eğer Urun ise 'Urun' yapmalısın.
+            ref: 'Product', 
             required: true
         },
         quantity: {
@@ -26,7 +27,8 @@ const OrderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Beklemede', 'Onaylandı', 'Reddedildi'],
+        // --- SADECE BU SATIRI GÜNCELLE ---
+        enum: ['Beklemede', 'Onaylandı', 'Kargolandı', 'Teslim Edildi', 'Reddedildi'],
         default: 'Beklemede'
     },
     createdAt: {

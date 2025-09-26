@@ -1,5 +1,3 @@
-/* public/css/custom.css - EKSİKSİZ NİHAİ SÜRÜM */
-
 :root {
     /* Bootstrap'in varsayılan mavi rengini eziyoruz. */
     --bs-primary: #D9531E; 
@@ -51,97 +49,177 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .display-5, .display-6 {
     --bs-btn-hover-color: white;
 }
 
-/* Aktif Sekmeler (Admin Paneli) */
-.nav-tabs .nav-link.active {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-    color: white;
-}
-
-/* Sayfalama (Pagination) Aktif Sayfa */
-.pagination .page-item.active .page-link {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-}
-
-/* Kartlara yumuşak bir geçiş efekti veriyoruz */
 .card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-/* Kullanıcı fare ile kartın üzerine geldiğinde... */
 .card:hover {
-    transform: translateY(-14px); /* Kartı 5 piksel yukarı kaldır */
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Gölgeyi daha belirgin yap */
+    transform: translateY(-13px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
 }
-/* public/css/custom.css (en alta ekle) */
 
 /* --- Okunabilirlik ve Kontrast İyileştirmeleri --- */
-
-/* Ana içerik alanındaki genel metin rengini beyaza çevirelim */
-/* Not: Bu kural, .card gibi kendi arka planı olan bileşenlerin içini etkilemez */
-.main-content {
-    color: #f8f9fa; /* Hafif kırık bir beyaz */
+.main-content, .display-5, .lead, #featured-products h2 {
+    color: #f8f9fa;
 }
 
-/* Ana başlıları daha belirgin yapalım */
-.main-content > h1, .main-content > h2 {
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Metne hafif gölge ekleyerek okunabilirliği artırır */
-}
-
-/* Ana sayfadaki karşılama metni için özel stil */
-.display-5, .lead {
-    color: #ffffff;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-}
-/* public/css/custom.css (en alta ekle) */
-
-/* --- Ana Sayfa Başlık Rengi Düzeltmesi --- */
-#featured-products h2 {
-    color: #ffffff; /* veya #f8f9fa gibi hafif kırık bir beyaz */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-}
-/* public/css/custom.css (en alta ekle) */
-
-/* --- Yorum Bölümü Okunabilirlik Düzeltmesi --- */
 .review-section {
-    color: #333; /* Kutu içindeki varsayılan metin rengini koyu yap */
+    color: #333;
 }
 
 .review-section h3 {
-    color: #212529; /* Başlıkların rengini de koyu yap */
+    color: #212529;
 }
 
-/* Yorum yapabilmek için giriş yap linkinin rengini ana marka rengimiz yapalım */
 .review-section p a {
     color: var(--bs-primary);
     font-weight: bold;
 }
-/* public/css/custom.css dosyasının en sonuna ekleyin */
 
 /* --- Ana Sayfa Öne Çıkan Ürün Butonları --- */
 #featured-products .card .btn {
     background-color: transparent;
-    color: var(--bs-primary); /* Ana turuncu renk */
-    border-color: var(--bs-primary); /* Ana turuncu renk */
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
     font-weight: bold;
 }
 
 #featured-products .card .btn:hover {
-    background-color: var(--bs-primary); /* Ana turuncu renk */
-    color: #ffffff; /* Beyaz renk */
+    background-color: var(--bs-primary);
+    color: #ffffff;
 }
-/* public/css/custom.css dosyasının en sonuna ekleyin */
 
 /* --- Navbar Link Beyaz Renk ve Büyüme Efekti --- */
 .navbar .navbar-nav .nav-link {
-    color: #ffffff; /* Yazıları bembeyaz yapar */
+    color: #ffffff;
     font-weight: bold;
-    transition: transform 0.2s ease-in-out; /* Büyüme efektini yumuşatır */
+    transition: transform 0.2s ease-in-out;
 }
 
-/* Fareyle üzerine gelince */
 .navbar .navbar-nav .nav-link:hover,
 .navbar .navbar-nav .nav-link:focus {
-    transform: scale(1.06); /* Yazıyı %10 büyütür */
+    transform: scale(1.1);
+}
+
+/* --- Admin Paneli Sekmeleri Stili --- */
+.nav-tabs .nav-link {
+    background-color: #ffffff;
+    color: #212529;
+    border: 1px solid #dee2e6;
+    margin-right: 5px;
+}
+
+.nav-tabs .nav-link:not(.active):hover {
+    background-color: #f8f9fa;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #ffffff !important;
+}
+
+/* --- Admin Paneli Okunabilirlik Düzeltmesi --- */
+.admin-section {
+    color: #212529;
+}
+
+.admin-section label {
+    font-weight: bold;
+}
+
+/* --- Ürünler Sayfası Başlık ve Arama Alanı --- */
+.products-header {
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 2rem;
+    border-radius: var(--bs-border-radius);
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.products-header h1 {
+    color: #ffffff;
+    border-bottom: 3px solid var(--bs-primary);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+}
+
+.search-form {
+    display: flex;
+}
+
+.search-form .form-control {
+    flex-grow: 1;
+    border: 2px solid transparent;
+    border-radius: var(--bs-border-radius) 0 0 var(--bs-border-radius);
+    background-color: rgba(255, 255, 255, 0.9);
+    transition: all 0.2s ease-in-out;
+}
+
+.search-form .form-control:focus {
+    background-color: #ffffff;
+    border-color: var(--bs-primary);
+    box-shadow: none;
+}
+
+.search-form .btn {
+    border-radius: 0 var(--bs-border-radius) var(--bs-border-radius) 0;
+    border: 2px solid var(--bs-primary);
+}
+
+/* --- YENİ EKLENEN KISIM: Ürün Detay Sayfası Sekme Stilleri --- */
+.nav-tabs {
+    border-bottom: none; /* Artık butonların kendi çerçevesi var, alttaki çizgiye gerek yok */
+}
+
+/* Pasif (tıklanmamış) sekme butonu */
+.nav-tabs .nav-link {
+    background-color: #ffffff;      /* Beyaz arka plan */
+    color: var(--bs-primary);       /* Turuncu yazı */
+    font-weight: bold;
+    border: 1px solid var(--bs-primary); /* Turuncu çerçeve */
+    margin-right: 2px;              /* Butonlar arasına boşluk */
+    border-radius: .5rem;           /* Butonları yuvarlak yapalım */
+    margin-bottom: 5px;
+}
+
+/* Pasif sekmenin üzerine gelince hafif renk değişimi */
+.nav-tabs .nav-link:hover:not(.active) {
+    background-color: #fff8f5; /* Çok hafif turuncu tonu */
+}
+
+/* Aktif (tıklanmış) sekme butonu */
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+    background-color: var(--bs-primary); /* Turuncu arka plan */
+    color: #ffffff;                      /* Beyaz yazı */
+    border-color: var(--bs-primary);     /* Çerçeve de turuncu */
+}
+
+/* Sekme içerik alanı */
+.tab-content {
+    padding: 1.5rem 0.5rem;
+    border-top: 1px solid #dee2e6; /* Sekmelerin altındaki ayırıcı çizgi */
+    margin-top: -6px; /* Çizgiyi butonlara yaklaştırmak için */
+}
+
+/* --- Kart İçindeki Metinlerin Okunabilirlik Düzeltmesi --- */
+.main-content .card,
+.main-content .card h1,
+.main-content .card h2,
+.main-content .card h3,
+.main-content .card p {
+    color: #212529; /* Kart içindeki tüm metinlerin varsayılan rengini siyah yapar */
+}
+
+/* --- Ürün Detay Sayfası Çerçeveleri (YENİ DÜZEN) --- */
+
+/* Alttaki sekme içeriği için çerçeve */
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    padding: 1.5rem;
+    border-bottom-left-radius: var(--bs-border-radius);
+    border-bottom-right-radius: var(--bs-border-radius);
 }

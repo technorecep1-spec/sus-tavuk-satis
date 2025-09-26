@@ -57,10 +57,12 @@
                 <div class="mb-3">
                     <label for="status" class="form-label">Yeni Durum:</label>
                     <select name="status" id="status" class="form-select">
-                        <option value="Beklemede" <%= siparis.status === 'Beklemede' ? 'selected' : '' %>>Beklemede</option>
-                        <option value="Onaylandı" <%= siparis.status === 'Onaylandı' ? 'selected' : '' %>>Onaylandı</option>
-                        <option value="Reddedildi" <%= siparis.status === 'Reddedildi' ? 'selected' : '' %>>Reddedildi</option>
-                    </select>
+    <option value="Beklemede" <%= siparis.status === 'Beklemede' ? 'selected' : '' %>>Beklemede</option>
+    <option value="Onaylandı" <%= siparis.status === 'Onaylandı' ? 'selected' : '' %>>Onaylandı</option>
+    <option value="Kargolandı" <%= siparis.status === 'Kargolandı' ? 'selected' : '' %>>Kargolandı</option>
+    <option value="Teslim Edildi" <%= siparis.status === 'Teslim Edildi' ? 'selected' : '' %>>Teslim Edildi</option>
+    <option value="Reddedildi" <%= siparis.status === 'Reddedildi' ? 'selected' : '' %>>Reddedildi</option>
+</select>
                 </div>
                 <button type="submit" class="btn btn-primary">Durumu Güncelle</button>
             </form>

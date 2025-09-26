@@ -3,6 +3,20 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="user-form">
+            
+            <%# --- YENİ EKLENEN MESAJ GÖSTERME BÖLÜMÜ --- %>
+            <% if (locals.success_msg && locals.success_msg.length > 0) { %>
+                <div class="alert alert-success" role="alert">
+                    <%= locals.success_msg %>
+                </div>
+            <% } %>
+            <% if (locals.error_msg && locals.error_msg.length > 0) { %>
+                <div class="alert alert-danger" role="alert">
+                    <%= locals.error_msg %>
+                </div>
+            <% } %>
+            <%# --- MESAJ BÖLÜMÜ BİTİŞ --- %>
+
             <h1 class="text-center mb-4">Giriş Yap</h1>
             <form action="/login" method="POST">
                 <div class="mb-3">
@@ -16,9 +30,9 @@
                 <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
             </form>
             <p class="text-center mt-3">
-    Henüz bir hesabınız yok mu? <a href="/register">Kayıt Olun</a> | 
-    <a href="/forgot-password">Şifremi Unuttum</a>
-</p>
+                Henüz bir hesabınız yok mu? <a href="/register">Kayıt Olun</a> | 
+                <a href="/forgot-password">Şifremi Unuttum</a>
+            </p>
         </div>
     </div>
 </div>

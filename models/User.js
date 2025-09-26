@@ -1,4 +1,4 @@
-// models/User.js - EKSİKSİZ TAM SÜRÜM
+// models/User.js - E-POSTA DOĞRULAMA EKLENMİŞ TAM SÜRÜM
 
 const mongoose = require('mongoose');
 
@@ -37,7 +37,20 @@ const UserSchema = new mongoose.Schema({
     },
     resetPasswordExpire: {
         type: Date
+    },
+
+    // --- YENİ EKLENEN E-POSTA DOĞRULAMA ALANLARI ---
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationToken: {
+        type: String
+    },
+    verificationTokenExpire: {
+        type: Date
     }
+    // ---------------------------------------------
 });
 
 module.exports = mongoose.model('User', UserSchema);
