@@ -2609,6 +2609,7 @@
             
             tbody.innerHTML = '';
             
+            
             filteredOrders.forEach((order, index) => {
                 // Sıralı sipariş numarası (1'den başlayarak)
                 const orderNumber = index + 1;
@@ -3984,6 +3985,7 @@
             
             tbody.innerHTML = '';
             
+            
             if (filteredUsers.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -4040,29 +4042,29 @@
                             <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start;">
                                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                                     <span style="font-size: 1rem; font-weight: 700; color: var(--text-primary);">
-                                        ${user.createdAt ? registrationDate.toLocaleDateString('tr-TR', {
+                                        ${registrationDate.toLocaleDateString('tr-TR', {
                                             day: '2-digit',
                                             month: '2-digit', 
                                             year: 'numeric',
                                             timeZone: 'Europe/Istanbul'
-                                        }) : 'Bilinmiyor'}
+                                        })}
                                     </span>
                                     <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">
-                                        ${user.createdAt ? registrationDate.toLocaleDateString('tr-TR', {
+                                        ${registrationDate.toLocaleDateString('tr-TR', {
                                             weekday: 'long',
                                             timeZone: 'Europe/Istanbul'
-                                        }) : ''}
+                                        })}
                                     </span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary)); padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border);">
                                     <i class="bi bi-clock" style="font-size: 0.8rem; color: var(--primary);"></i>
                                     <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: 600;">
-                                        ${user.createdAt ? registrationDate.toLocaleTimeString('tr-TR', {
+                                        ${registrationDate.toLocaleTimeString('tr-TR', {
                                             hour: '2-digit', 
                                             minute: '2-digit',
                                             second: '2-digit',
                                             timeZone: 'Europe/Istanbul'
-                                        }) : 'Bilinmiyor'}
+                                        })}
                                     </span>
                                 </div>
                             </div>

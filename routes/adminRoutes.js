@@ -392,11 +392,7 @@ router.get('/user/:id', async (req, res) => {
 router.get('/orders', async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate({
-                path: 'user',
-                select: 'email firstName lastName',
-                options: { strictPopulate: false }
-            })
+            .populate('user', 'email firstName lastName')
             .populate('products.product', 'isim fiyat')
             .sort({ createdAt: -1 });
         
