@@ -26,6 +26,11 @@ const ProductSchema = new mongoose.Schema({
     isFeatured: {
         type: Boolean,
         default: false
+    },
+    kategori: {
+        type: String,
+        default: 'tavuk',
+        enum: ['tavuk', 'horoz', 'civciv', 'yumurta']
     }
 });
 

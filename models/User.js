@@ -51,6 +51,8 @@ const UserSchema = new mongoose.Schema({
         type: Date
     }
     // ---------------------------------------------
+}, {
+    timestamps: true // createdAt ve updatedAt alanlarını otomatik ekler
 });
 
 module.exports = mongoose.model('User', UserSchema);

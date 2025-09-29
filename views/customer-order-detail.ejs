@@ -1,0 +1,163 @@
+<%- include('partials/header') %>
+
+<div class="main-content">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Geri Dön Butonu -->
+                <a href="/my-orders" class="btn btn-outline-secondary mb-4">
+                    <i class="bi bi-arrow-left"></i> Siparişlerime Geri Dön
+                </a>
+
+                <!-- Sipariş Başlığı -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-receipt"></i>
+                            Sipariş Detayları
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Sipariş No:</strong> #<%= siparis._id.toString().slice(-8) %></p>
+                                <p><strong>Sipariş Tarihi:</strong> <%= new Date(siparis.createdAt).toLocaleString('tr-TR') %></p>
+                                <p><strong>Toplam Tutar:</strong> <span class="h5 text-success">₺<%= siparis.total %></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Mevcut Durum:</strong></p>
+                                <% if (siparis.status === 'Teslim Edildi') { %>
+                                    <span class="badge bg-success fs-6"><%= siparis.status %></span>
+                                <% } else if (siparis.status === 'Kargoda') { %>
+                                    <span class="badge bg-primary fs-6"><%= siparis.status %></span>
+                                <% } else if (siparis.status === 'Reddedildi') { %>
+                                    <span class="badge bg-danger fs-6"><%= siparis.status %></span>
+                                <% } else { %>
+                                    <span class="badge bg-warning text-dark fs-6"><%= siparis.status %></span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reddetme Sebebi (Sadece Reddedildi durumunda göster) -->
+                <% if (siparis.status === 'Reddedildi' && siparis.rejectionReason) { %>
+                    <div class="card shadow-sm mb-4 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Sipariş Reddetme Sebebi
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-danger" role="alert">
+                                <h6 class="alert-heading">Üzgünüz!</h6>
+                                <p class="mb-0"><%= siparis.rejectionReason %></p>
+                            </div>
+                            <div class="text-center">
+                                <a href="/iletisim" class="btn btn-outline-danger">
+                                    <i class="bi bi-telephone"></i>
+                                    İletişime Geç
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+
+                <!-- Sipariş Edilen Ürünler -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-box-seam"></i>
+                            Sipariş Edilen Ürünler
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ürün Adı</th>
+                                        <th class="text-center">Adet</th>
+                                        <th class="text-end">Birim Fiyat</th>
+                                        <th class="text-end">Toplam</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% siparis.products.forEach(item => { %>
+                                        <tr>
+                                            <td>
+                                                <strong><%= item.product ? item.product.isim : 'Ürün bilgisi yok' %></strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-secondary"><%= item.quantity %></span>
+                                            </td>
+                                            <td class="text-end">
+                                                ₺<%= item.product ? item.product.fiyat : '0' %>
+                                            </td>
+                                            <td class="text-end">
+                                                <strong>₺<%= item.product ? (item.product.fiyat * item.quantity) : '0' %></strong>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-success">
+                                        <th colspan="3" class="text-end">Genel Toplam:</th>
+                                        <th class="text-end">₺<%= siparis.total %></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sipariş Durumu Açıklaması -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            Sipariş Durumu Açıklaması
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (siparis.status === 'Beklemede') { %>
+                            <div class="alert alert-warning" role="alert">
+                                <h6 class="alert-heading">Siparişiniz İnceleniyor</h6>
+                                <p class="mb-0">Siparişiniz alınmıştır ve incelenmektedir. En kısa sürede size dönüş yapacağız.</p>
+                            </div>
+                        <% } else if (siparis.status === 'Onaylandı') { %>
+                            <div class="alert alert-success" role="alert">
+                                <h6 class="alert-heading">Siparişiniz Onaylandı!</h6>
+                                <p class="mb-0">Siparişiniz başarıyla onaylanmıştır. En kısa sürede hazırlanmaya başlanacaktır.</p>
+                            </div>
+                        <% } else if (siparis.status === 'Hazırlanıyor') { %>
+                            <div class="alert alert-info" role="alert">
+                                <h6 class="alert-heading">Siparişiniz Hazırlanıyor</h6>
+                                <p class="mb-0">Siparişiniz hazırlanmaktadır. Kısa süre içinde kargoya verilecektir.</p>
+                            </div>
+                        <% } else if (siparis.status === 'Kargoda') { %>
+                            <div class="alert alert-primary" role="alert">
+                                <h6 class="alert-heading">Siparişiniz Kargoya Verildi!</h6>
+                                <p class="mb-0">Siparişiniz kargoya verilmiştir. Kargo takip numarası ile takip edebilirsiniz.</p>
+                            </div>
+                        <% } else if (siparis.status === 'Teslim Edildi') { %>
+                            <div class="alert alert-success" role="alert">
+                                <h6 class="alert-heading">Siparişiniz Teslim Edildi!</h6>
+                                <p class="mb-0">Siparişiniz başarıyla teslim edilmiştir. Teşekkür ederiz!</p>
+                            </div>
+                        <% } else if (siparis.status === 'Reddedildi') { %>
+                            <div class="alert alert-danger" role="alert">
+                                <h6 class="alert-heading">Siparişiniz Reddedildi</h6>
+                                <p class="mb-0">Üzgünüz, siparişiniz reddedilmiştir. Detaylar için yukarıdaki bilgileri inceleyebilirsiniz.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
+

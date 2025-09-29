@@ -27,9 +27,12 @@ const OrderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        // --- SADECE BU SATIRI GÜNCELLE ---
-        enum: ['Beklemede', 'Onaylandı', 'Kargolandı', 'Teslim Edildi', 'Reddedildi'],
+        enum: ['Beklemede', 'Onaylandı', 'Hazırlanıyor', 'Kargoda', 'Teslim Edildi', 'Reddedildi'],
         default: 'Beklemede'
+    },
+    rejectionReason: {
+        type: String,
+        required: false
     },
     createdAt: {
         type: Date,

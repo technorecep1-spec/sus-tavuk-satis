@@ -30,6 +30,7 @@ connectDB();
 
 // 4. Express Ayarları ve Middleware'ler
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
+app.use(express.json()); // JSON body parsing için
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -56,6 +57,7 @@ app.use((req, res, next) => {
 // 5. Rotaları Kullanma
 app.use('/', productRoutes);        // Genel ve kullanıcı rotaları
 app.use('/admin', adminRoutes);     // Admin paneli rotaları
+
 
 // 6. Sunucuyu Başlatma
 app.listen(PORT, () => {

@@ -14,6 +14,7 @@ const Message = require('../models/Message');
 const Review = require('../models/Review');
 const Conversation = require('../models/Conversation');
 const GalleryImage = require('../models/GalleryImage');
+const BlogPost = require('../models/BlogPost');
 const sendEmail = require('../utils/sendEmail');
 
 // --- Genel ve Ürün Rotaları ---
@@ -64,9 +65,31 @@ router.get('/urunler', async (req, res) => {
         const totalProducts = await Product.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / itemsPerPage);
         const urunler = await Product.find(filter).sort({ _id: -1 }).skip((page - 1) * itemsPerPage).limit(itemsPerPage);
-        res.render('urunler', { urunler, currentPage: page, totalPages, searchTerm, pageTitle: 'Ürünlerimiz - Wyandotte TR' });
+        
+        // Her ürün için değerlendirme verilerini al
+        const urunlerWithReviews = await Promise.all(urunler.map(async (urun) => {
+            const reviews = await Review.find({ product: urun._id, isApproved: true });
+            const reviewCount = reviews.length;
+            const averageRating = reviewCount > 0 ? 
+                (reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount).toFixed(1) : 
+                0;
+            
+            return {
+                ...urun.toObject(),
+                reviewCount,
+                averageRating: parseFloat(averageRating)
+            };
+        }));
+        
+        res.render('urunler', { 
+            urunler: urunlerWithReviews, 
+            currentPage: page, 
+            totalPages, 
+            searchTerm, 
+            pageTitle: 'Ürünlerimiz - Wyandotte TR' 
+        });
     } catch (err) {
-        console.error(err);
+        console.error("Ürünler sayfası yüklenirken hata:", err);
         res.status(500).send('Sunucu Hatası');
     }
 });
@@ -115,6 +138,23 @@ router.get('/galeri', async (req, res) => {
         });
     } catch (err) {
         console.error('Galeri sayfası yüklenirken hata:', err);
+        res.status(500).send('Sunucu Hatası');
+    }
+});
+
+router.get('/blog', async (req, res) => {
+    try {
+        const posts = await BlogPost.find({ status: 'published' })
+            .sort({ publishedAt: -1, createdAt: -1 })
+            .populate('author', 'name email')
+            .limit(12);
+            
+        res.render('blog', {
+            pageTitle: 'Blog - Wyandotte TR',
+            posts: posts
+        });
+    } catch (err) {
+        console.error('Blog sayfası yüklenirken hata:', err);
         res.status(500).send('Sunucu Hatası');
     }
 });
@@ -224,6 +264,31 @@ router.get('/my-orders', async (req, res) => {
     } catch (err) {
         console.error("Siparişlerim sayfası yüklenirken hata:", err);
         res.status(500).send('Sunucu Hatası');
+    }
+});
+
+// Müşteri sipariş detay sayfası
+router.get('/order-detail/:id', async (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+    try {
+        const siparis = await Order.findOne({ 
+            _id: req.params.id, 
+            user: req.session.user.id 
+        }).populate('products.product');
+        
+        if (!siparis) {
+            req.flash('error_msg', 'Sipariş bulunamadı veya bu siparişe erişim yetkiniz yok.');
+            return res.redirect('/my-orders');
+        }
+        
+        res.render('customer-order-detail', { 
+            siparis: siparis,
+            pageTitle: `Sipariş Detayı - Wyandotte TR` 
+        });
+    } catch (err) {
+        console.error("Sipariş detayı getirilirken hata:", err);
+        req.flash('error_msg', 'Sipariş detayı yüklenirken bir hata oluştu.');
+        res.redirect('/my-orders');
     }
 });
 
