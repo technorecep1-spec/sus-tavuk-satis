@@ -39,11 +39,12 @@ router.post('/register', [
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create new user
+    // Create new user (temporarily skip email verification for testing)
     const user = new User({
       name,
       email,
       password,
+      isEmailVerified: true, // TEMP: Skip email verification
       emailVerificationToken: verificationToken,
       emailVerificationExpires: verificationExpires
     });
@@ -57,13 +58,18 @@ router.post('/register', [
       console.warn('Failed to send verification email to:', email);
     }
 
+    // Generate token for immediate login (temp solution)
+    const token = generateToken(user._id);
+
     res.status(201).json({
-      message: 'Kayıt başarılı! Lütfen e-posta adresinizi kontrol edin ve hesabınızı doğrulayın.',
+      message: 'Kayıt başarılı! Otomatik giriş yapıldı.',
+      token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        isEmailVerified: user.isEmailVerified
+        isEmailVerified: user.isEmailVerified,
+        isAdmin: user.checkAdminStatus()
       }
     });
   } catch (error) {
