@@ -47,12 +47,35 @@ app.use('/api/admin', require('./routes/admin'));
 
 // Serve static files from React build in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/frontend/build')));
+  // Check if build directory exists
+  const buildPath = path.join(__dirname, '../frontend/frontend/build');
+  const fs = require('fs');
   
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/frontend/build', 'index.html'));
-  });
+  if (fs.existsSync(buildPath)) {
+    app.use(express.static(buildPath));
+    
+    // Handle React routing, return all requests to React app
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+  } else {
+    // Fallback: API only mode
+    console.log('Build directory not found, running in API-only mode');
+    app.get('/', (req, res) => {
+      res.json({ 
+        message: 'Wyandotte Chickens API is running!',
+        status: 'Build directory not found - API only mode',
+        endpoints: {
+          auth: '/api/auth',
+          products: '/api/products',
+          orders: '/api/orders',
+          blog: '/api/blog',
+          gallery: '/api/gallery',
+          admin: '/api/admin'
+        }
+      });
+    });
+  }
 } else {
   // Development mode - API only
   app.get('/', (req, res) => {
