@@ -39,39 +39,33 @@ router.post('/register', [
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create new user (temporarily skip email verification for testing)
-    const user = new User({
-      name,
-      email,
-      password,
-      isEmailVerified: true, // TEMP: Skip email verification
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: verificationExpires
+  // Create new user with email verification required
+  const user = new User({
+    name,
+    email,
+    password,
+    isEmailVerified: false, // Email verification required
+    emailVerificationToken: verificationToken,
+    emailVerificationExpires: verificationExpires
+  });
+
+  await user.save();
+
+  // Send verification email
+  const emailSent = await sendVerificationEmail(email, name, verificationToken);
+
+  if (!emailSent) {
+    console.warn('Failed to send verification email to:', email);
+    return res.status(500).json({
+      message: 'Kayıt başarılı ancak doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
     });
+  }
 
-    await user.save();
-
-    // Send verification email
-    const emailSent = await sendVerificationEmail(email, name, verificationToken);
-    
-    if (!emailSent) {
-      console.warn('Failed to send verification email to:', email);
-    }
-
-    // Generate token for immediate login (temp solution)
-    const token = generateToken(user._id);
-
-    res.status(201).json({
-      message: 'Kayıt başarılı! Otomatik giriş yapıldı.',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isEmailVerified: user.isEmailVerified,
-        isAdmin: user.checkAdminStatus()
-      }
-    });
+  res.status(201).json({
+    message: 'Kayıt başarılı! Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.',
+    emailSent: true,
+    verificationRequired: true
+  });
   } catch (error) {
     console.error('Registration error:', error);
     console.error('Error details:', error.message);
