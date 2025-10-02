@@ -27,6 +27,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminBlog from './pages/admin/AdminBlog';
 import AdminGallery from './pages/admin/AdminGallery';
 import AdminEmail from './pages/admin/AdminEmail';
+import AdminUsers from './pages/admin/AdminUsers';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 
@@ -113,6 +114,11 @@ function App() {
                   <Route path="/admin/email" element={
                     <AdminRoute>
                       <AdminEmail />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/users" element={
+                    <AdminRoute>
+                      <AdminUsers />
                     </AdminRoute>
                   } />
                 </Routes>

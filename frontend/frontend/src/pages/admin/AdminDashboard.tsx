@@ -224,6 +224,18 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </a>
+            <a
+              href="/admin/users"
+              className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
+            >
+              <div className="flex items-center">
+                <Users className="h-8 w-8 text-indigo-600 mr-3" />
+                <div>
+                  <p className="font-semibold text-gray-900">👥 Kullanıcı Yönetimi</p>
+                  <p className="text-sm text-gray-600">Kullanıcıları görüntüle ve yönet</p>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </div>
