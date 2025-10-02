@@ -30,11 +30,48 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 console.log('MONGO_URI:', process.env.MONGO_URI ? 'Found' : 'Not found');
 console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Found' : 'Not found');
 console.log('ADMIN_EMAIL:', process.env.ADMIN_EMAIL ? 'Found' : 'Not found');
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
+.then(async () => {
+  console.log('MongoDB connected successfully');
+  
+  // Auto-clear database if CLEAR_DB environment variable is set
+  if (process.env.CLEAR_DB === 'true') {
+    console.log('🗑️  CLEAR_DB flag detected, clearing database...');
+    
+    try {
+      const User = require('./models/User');
+      const Product = require('./models/Product');
+      const Order = require('./models/Order');
+      const BlogPost = require('./models/BlogPost');
+      const GalleryImage = require('./models/GalleryImage');
+      
+      const collections = [
+        { model: User, name: 'Users' },
+        { model: Product, name: 'Products' },
+        { model: Order, name: 'Orders' },
+        { model: BlogPost, name: 'Blog Posts' },
+        { model: GalleryImage, name: 'Gallery Images' }
+      ];
+      
+      for (const collection of collections) {
+        const count = await collection.model.countDocuments();
+        if (count > 0) {
+          await collection.model.deleteMany({});
+          console.log(`🗑️  Deleted ${count} ${collection.name}`);
+        }
+      }
+      
+      console.log('✅ Database cleared successfully!');
+      console.log('📝 You can now register fresh accounts at /register');
+    } catch (error) {
+      console.error('❌ Error clearing database:', error);
+    }
+  }
+})
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
