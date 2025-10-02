@@ -1,10 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
-const { sendVerificationEmail } = require('../utils/sendEmail');
 
 const router = express.Router();
 
@@ -13,18 +11,20 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
+// Register route - Simple registration without email verification
 router.post('/register', [
-  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('name').notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
   try {
+    // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
     }
 
     const { name, email, password } = req.body;
@@ -32,101 +32,90 @@ router.post('/register', [
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({
+        message: 'Bu e-posta adresi ile zaten bir hesap mevcut'
+      });
     }
 
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-  // Create new user with email verification required
-  const user = new User({
-    name,
-    email,
-    password,
-    isEmailVerified: false, // Email verification required
-    emailVerificationToken: verificationToken,
-    emailVerificationExpires: verificationExpires
-  });
-
-  await user.save();
-
-  // Send verification email
-  const emailSent = await sendVerificationEmail(email, name, verificationToken);
-
-  if (!emailSent) {
-    console.warn('Failed to send verification email to:', email);
-    return res.status(500).json({
-      message: 'Kayıt başarılı ancak doğrulama e-postası gönderilemedi. Lütfen daha sonra tekrar deneyin.'
+    // Create new user
+    const user = new User({
+      name,
+      email,
+      password
     });
-  }
 
-  res.status(201).json({
-    message: 'Kayıt başarılı! Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.',
-    emailSent: true,
-    verificationRequired: true
-  });
+    await user.save();
+
+    // Generate token and login user immediately
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      message: 'Kayıt başarılı! Hoş geldiniz!',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.checkAdminStatus()
+      }
+    });
+
   } catch (error) {
     console.error('Registration error:', error);
-    console.error('Error details:', error.message);
-    console.error('Error stack:', error.stack);
     
-    // More specific error messages
     if (error.code === 11000) {
-      return res.status(400).json({ message: 'Bu e-posta adresi zaten kullanımda' });
+      return res.status(400).json({
+        message: 'Bu e-posta adresi ile zaten bir hesap mevcut'
+      });
     }
     
     if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(e => e.message);
-      return res.status(400).json({ message: messages.join(', ') });
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: messages
+      });
     }
     
-    res.status(500).json({ 
-      message: 'Server error during registration',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    res.status(500).json({
+      message: 'Sunucu hatası. Lütfen tekrar deneyin.'
     });
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
+// Login route - Simple login
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
     }
 
     const { email, password } = req.body;
 
-    // Check if user exists
+    // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Check if email is verified
-    if (!user.isEmailVerified) {
-      return res.status(400).json({ 
-        message: 'Lütfen önce e-posta adresinizi doğrulayın. E-posta kutunuzu kontrol edin.',
-        needsVerification: true
-      });
+      return res.status(400).json({ message: 'Geçersiz e-posta veya şifre' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Geçersiz e-posta veya şifre' });
     }
 
     // Generate token
     const token = generateToken(user._id);
 
     res.json({
+      message: 'Giriş başarılı!',
       token,
       user: {
         id: user._id,
@@ -137,114 +126,26 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({
+      message: 'Sunucu hatası. Lütfen tekrar deneyin.'
+    });
   }
 });
 
-// @route   GET /api/auth/verify-email/:token
-// @desc    Verify email address
-// @access  Public
-router.get('/verify-email/:token', async (req, res) => {
+// Get current user
+router.get('/me', auth, async (req, res) => {
   try {
-    const { token } = req.params;
-
-    // Find user with this verification token
-    const user = await User.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: Date.now() }
-    });
-
+    const user = await User.findById(req.user.userId).select('-password');
     if (!user) {
-      return res.status(400).json({ 
-        message: 'Geçersiz veya süresi dolmuş doğrulama linki' 
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update user verification status
-    user.isEmailVerified = true;
-    user.emailVerificationToken = null;
-    user.emailVerificationExpires = null;
-    await user.save();
-
-    // Generate token for automatic login
-    const authToken = generateToken(user._id);
-
     res.json({
-      message: 'E-posta adresiniz başarıyla doğrulandı!',
-      token: authToken,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        isAdmin: user.checkAdminStatus(),
-        isEmailVerified: user.isEmailVerified
-      }
-    });
-  } catch (error) {
-    console.error('Email verification error:', error);
-    res.status(500).json({ message: 'Server error during verification' });
-  }
-});
-
-// @route   POST /api/auth/resend-verification
-// @desc    Resend email verification
-// @access  Public
-router.post('/resend-verification', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { email } = req.body;
-
-    // Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı' });
-    }
-
-    // Check if already verified
-    if (user.isEmailVerified) {
-      return res.status(400).json({ message: 'E-posta adresi zaten doğrulanmış' });
-    }
-
-    // Generate new verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    user.emailVerificationToken = verificationToken;
-    user.emailVerificationExpires = verificationExpires;
-    await user.save();
-
-    // Send verification email
-    const emailSent = await sendVerificationEmail(email, user.name, verificationToken);
-    
-    if (!emailSent) {
-      return res.status(500).json({ message: 'E-posta gönderilirken hata oluştu' });
-    }
-
-    res.json({ message: 'Doğrulama e-postası yeniden gönderildi' });
-  } catch (error) {
-    console.error('Resend verification error:', error);
-    res.status(500).json({ message: 'Server error during resend verification' });
-  }
-});
-
-// @route   GET /api/auth/me
-// @desc    Get current user
-// @access  Private
-router.get('/me', auth, async (req, res) => {
-  try {
-    res.json({
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        isAdmin: req.user.checkAdminStatus(),
-        isEmailVerified: req.user.isEmailVerified
+        isAdmin: user.checkAdminStatus()
       }
     });
   } catch (error) {

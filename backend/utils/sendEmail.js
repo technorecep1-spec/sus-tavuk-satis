@@ -30,95 +30,102 @@ const createTransporter = async () => {
   });
 };
 
-// Send email verification
-const sendVerificationEmail = async (email, name, verificationToken) => {
+// Send bulk email to multiple recipients
+const sendBulkEmail = async (recipients, subject, htmlMessage) => {
+  let successful = 0;
+  let failed = 0;
+  const results = [];
+
   try {
     const transporter = await createTransporter();
     
-    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
-    
-    const mailOptions = {
-      from: `"Wyandotte Tavuk Çiftliği" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'E-posta Adresinizi Doğrulayın',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">Hoş Geldiniz ${name}!</h2>
-          <p>Wyandotte Tavuk Çiftliği'ne kayıt olduğunuz için teşekkür ederiz.</p>
-          <p>Hesabınızı aktifleştirmek için aşağıdaki butona tıklayın:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: #3498db; color: white; padding: 12px 30px; 
-                      text-decoration: none; border-radius: 5px; display: inline-block;">
-              E-posta Adresimi Doğrula
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            Bu link 24 saat geçerlidir. Eğer bu e-postayı siz talep etmediyseniz, lütfen göz ardı edin.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            Link çalışmıyorsa, aşağıdaki adresi tarayıcınıza kopyalayın:<br>
-            ${verificationUrl}
-          </p>
-        </div>
-      `
-    };
+    // Send email to each recipient
+    for (const recipient of recipients) {
+      try {
+        const mailOptions = {
+          from: `"Wyandotte Tavuk Çiftliği" <${process.env.EMAIL_USER || 'noreply@wyandotte.com'}>`,
+          to: recipient.email,
+          subject: subject,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #2c3e50; margin: 0;">🐔 Wyandotte Tavuk Çiftliği</h1>
+                <p style="color: #7f8c8d; margin: 5px 0;">Premium Tavuk Ürünleri</p>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0 0 10px 0; color: #2c3e50;">Merhaba <strong>${recipient.name}</strong>,</p>
+                <div style="color: #34495e; line-height: 1.6;">
+                  ${htmlMessage}
+                </div>
+              </div>
+              
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1;">
+                <p style="color: #7f8c8d; font-size: 14px; margin: 0;">
+                  Bu e-postayı almak istemiyorsanız, lütfen bizimle iletişime geçin.
+                </p>
+                <p style="color: #7f8c8d; font-size: 14px; margin: 5px 0 0 0;">
+                  © 2024 Wyandotte Tavuk Çiftliği. Tüm hakları saklıdır.
+                </p>
+              </div>
+            </div>
+          `
+        };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Verification email sent to:', email);
-    
-    // If using Ethereal, log the preview URL
-    if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Email sent to ${recipient.email}:`, info.messageId);
+        
+        // If using Ethereal, log the preview URL
+        if (info.messageId && nodemailer.getTestMessageUrl(info)) {
+          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        }
+        
+        successful++;
+        results.push({
+          email: recipient.email,
+          status: 'success',
+          messageId: info.messageId
+        });
+        
+      } catch (error) {
+        console.error(`Failed to send email to ${recipient.email}:`, error);
+        failed++;
+        results.push({
+          email: recipient.email,
+          status: 'failed',
+          error: error.message
+        });
+      }
     }
     
-    return true;
+    return {
+      successful,
+      failed,
+      results
+    };
+    
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    return false;
+    console.error('Bulk email error:', error);
+    throw error;
   }
 };
 
-// Send password reset email
-const sendPasswordResetEmail = async (email, name, resetToken) => {
+// Send single email (for notifications, etc.)
+const sendSingleEmail = async (to, subject, htmlMessage, recipientName = 'Müşteri') => {
   try {
-    const transporter = await createTransporter();
+    const result = await sendBulkEmail([{
+      name: recipientName,
+      email: to
+    }], subject, htmlMessage);
     
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-    
-    const mailOptions = {
-      from: `"Wyandotte Tavuk Çiftliği" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: 'Şifre Sıfırlama Talebi',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2c3e50;">Şifre Sıfırlama</h2>
-          <p>Merhaba ${name},</p>
-          <p>Şifrenizi sıfırlamak için bir talepte bulundunuz.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #e74c3c; color: white; padding: 12px 30px; 
-                      text-decoration: none; border-radius: 5px; display: inline-block;">
-              Şifremi Sıfırla
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            Bu link 1 saat geçerlidir. Eğer bu talebi siz yapmadıysanız, lütfen göz ardı edin.
-          </p>
-        </div>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent to:', email);
-    return true;
+    return result.successful > 0;
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    console.error('Single email error:', error);
     return false;
   }
 };
 
 module.exports = {
-  sendVerificationEmail,
-  sendPasswordResetEmail
+  sendBulkEmail,
+  sendSingleEmail
 };

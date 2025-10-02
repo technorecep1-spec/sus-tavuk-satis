@@ -24,18 +24,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  isEmailVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailVerificationToken: {
-    type: String,
-    default: null
-  },
-  emailVerificationExpires: {
-    type: Date,
-    default: null
-  },
+  // Email verification removed - using simple registration + admin bulk email system
   createdAt: {
     type: Date,
     default: Date.now

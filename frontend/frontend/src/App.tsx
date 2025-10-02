@@ -16,8 +16,7 @@ import BlogPost from './pages/BlogPost';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import VerifyEmail from './pages/VerifyEmail';
-import ResendVerification from './pages/ResendVerification';
+// Email verification pages removed - using simple registration + admin bulk email
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import MyOrders from './pages/MyOrders';
@@ -27,6 +26,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminBlog from './pages/admin/AdminBlog';
 import AdminGallery from './pages/admin/AdminGallery';
+import AdminEmail from './pages/admin/AdminEmail';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AdminRoute from './components/auth/AdminRoute';
 
@@ -60,8 +60,7 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
-                  <Route path="/verify-email/:token" element={<VerifyEmail />} />
-                  <Route path="/resend-verification" element={<ResendVerification />} />
+            {/* Email verification routes removed - using simple registration */}
                   
                   {/* Protected Routes */}
                   <Route path="/cart" element={
@@ -109,6 +108,11 @@ function App() {
                   <Route path="/admin/gallery" element={
                     <AdminRoute>
                       <AdminGallery />
+                    </AdminRoute>
+                  } />
+                  <Route path="/admin/email" element={
+                    <AdminRoute>
+                      <AdminEmail />
                     </AdminRoute>
                   } />
                 </Routes>

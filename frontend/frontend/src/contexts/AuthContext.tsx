@@ -6,7 +6,7 @@ interface User {
   name: string;
   email: string;
   isAdmin: boolean;
-  isEmailVerified?: boolean;
+  // isEmailVerified removed - using simple registration
 }
 
 interface AuthContextType {

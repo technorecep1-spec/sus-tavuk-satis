@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
-import { Users, Package, ShoppingCart, FileText, Image, DollarSign } from 'lucide-react';
+import { Users, Package, ShoppingCart, FileText, Image, DollarSign, Mail } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -209,6 +209,18 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <p className="font-semibold text-gray-900">{t('admin.manageGallery')}</p>
                   <p className="text-sm text-gray-600">{t('admin.manageGalleryDesc')}</p>
+                </div>
+              </div>
+            </a>
+            <a
+              href="/admin/email"
+              className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
+            >
+              <div className="flex items-center">
+                <Mail className="h-8 w-8 text-purple-600 mr-3" />
+                <div>
+                  <p className="font-semibold text-gray-900">📧 Toplu E-posta</p>
+                  <p className="text-sm text-gray-600">Müşterilere e-posta gönder</p>
                 </div>
               </div>
             </a>
