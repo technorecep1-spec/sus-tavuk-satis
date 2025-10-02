@@ -1,34 +1,57 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter with timeout and better error handling
+// Create transporter with fallback to mock mode
 const createTransporter = async () => {
   try {
-    // If no email config provided, use Ethereal for testing
+    // If no email config provided, try Ethereal with fallback to mock
     if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
-      console.log('No email config found, creating test account...');
+      console.log('No email config found, trying test account...');
       
-      // Add timeout for test account creation
-      const testAccount = await Promise.race([
-        nodemailer.createTestAccount(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Test account creation timeout')), 10000)
-        )
-      ]);
-      
-      console.log('Test account created:', testAccount.user);
-      
-      return nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 5000,    // 5 seconds
-        socketTimeout: 10000,     // 10 seconds
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
+      try {
+        // Try to create Ethereal account with short timeout
+        const testAccount = await Promise.race([
+          nodemailer.createTestAccount(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Test account creation timeout')), 5000)
+          )
+        ]);
+        
+        console.log('Test account created:', testAccount.user);
+        
+        return nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          connectionTimeout: 5000,  // Shorter timeout
+          greetingTimeout: 3000,    
+          socketTimeout: 5000,      
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+      } catch (etherealError) {
+        console.log('Ethereal failed, using mock email mode:', etherealError.message);
+        
+        // Return mock transporter for Render.com free tier
+        return {
+          sendMail: async (mailOptions) => {
+            console.log('📧 MOCK EMAIL SENT:');
+            console.log('  To:', mailOptions.to);
+            console.log('  Subject:', mailOptions.subject);
+            console.log('  From:', mailOptions.from);
+            console.log('  Content preview:', mailOptions.html ? mailOptions.html.substring(0, 100) + '...' : 'No content');
+            
+            // Simulate email sending delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            return {
+              messageId: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              response: 'Mock email sent successfully'
+            };
+          }
+        };
+      }
     }
 
     // Use provided email config
@@ -110,8 +133,10 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
         console.log(`✅ Email sent successfully to ${recipient.email}:`, info.messageId);
         
         // If using Ethereal, log the preview URL
-        if (info.messageId && nodemailer.getTestMessageUrl(info)) {
+        if (info.messageId && nodemailer.getTestMessageUrl && nodemailer.getTestMessageUrl(info)) {
           console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
+        } else if (info.messageId && info.messageId.startsWith('mock-')) {
+          console.log('📧 Mock email logged above');
         }
         
         successful++;
