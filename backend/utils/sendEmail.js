@@ -1,7 +1,24 @@
 const nodemailer = require('nodemailer');
 
 // Create transporter
-const createTransporter = () => {
+const createTransporter = async () => {
+  // If no email config provided, use Ethereal for testing
+  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
+    console.log('No email config found, creating test account...');
+    const testAccount = await nodemailer.createTestAccount();
+    
+    return nodemailer.createTransporter({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass,
+      },
+    });
+  }
+
+  // Use provided email config
   return nodemailer.createTransporter({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -16,7 +33,7 @@ const createTransporter = () => {
 // Send email verification
 const sendVerificationEmail = async (email, name, verificationToken) => {
   try {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
     
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
     
@@ -47,8 +64,14 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
     console.log('Verification email sent to:', email);
+    
+    // If using Ethereal, log the preview URL
+    if (info.messageId && nodemailer.getTestMessageUrl(info)) {
+      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    }
+    
     return true;
   } catch (error) {
     console.error('Error sending verification email:', error);
@@ -59,7 +82,7 @@ const sendVerificationEmail = async (email, name, verificationToken) => {
 // Send password reset email
 const sendPasswordResetEmail = async (email, name, resetToken) => {
   try {
-    const transporter = createTransporter();
+    const transporter = await createTransporter();
     
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
     
