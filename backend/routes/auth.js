@@ -68,7 +68,23 @@ router.post('/register', [
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // More specific error messages
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Bu e-posta adresi zaten kullanımda' });
+    }
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    
+    res.status(500).json({ 
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
