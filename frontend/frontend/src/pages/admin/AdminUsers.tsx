@@ -34,10 +34,18 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast.error('Oturum bulunamadı. Lütfen giriş yapın.');
+        window.location.href = '/login';
+        return;
+      }
+
       const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
       const response = await fetch(`${baseUrl}/api/email/users`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -45,14 +53,18 @@ const AdminUsers: React.FC = () => {
         const data = await response.json();
         setUsers(data.users);
       } else if (response.status === 401) {
+        localStorage.removeItem('token'); // Clear invalid token
         toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
         window.location.href = '/login';
+      } else if (response.status === 403) {
+        toast.error('Bu sayfaya erişim yetkiniz yok.');
       } else {
-        toast.error('Kullanıcılar yüklenemedi');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || 'Kullanıcılar yüklenemedi');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Kullanıcılar yüklenemedi');
+      toast.error('Bağlantı hatası. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }

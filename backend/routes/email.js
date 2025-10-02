@@ -9,12 +9,13 @@ const router = express.Router();
 // Admin middleware
 const adminAuth = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId);
-    if (!user || !user.checkAdminStatus()) {
+    // req.user is already populated by auth middleware
+    if (!req.user || !req.user.checkAdminStatus()) {
       return res.status(403).json({ message: 'Admin access required' });
     }
     next();
   } catch (error) {
+    console.error('Admin auth error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -105,7 +106,7 @@ router.post('/send-test', [
     }
 
     const { subject, message } = req.body;
-    const admin = await User.findById(req.user.userId);
+    const admin = req.user; // Already populated by auth middleware
 
     // Send test email to admin
     const result = await sendBulkEmail([{
@@ -130,7 +131,7 @@ router.delete('/users/:userId', auth, adminAuth, async (req, res) => {
     const { userId } = req.params;
     
     // Prevent admin from deleting themselves
-    if (userId === req.user.userId) {
+    if (userId === req.user._id.toString()) {
       return res.status(400).json({ message: 'You cannot delete your own account' });
     }
 
