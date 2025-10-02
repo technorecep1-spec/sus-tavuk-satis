@@ -2,14 +2,15 @@
   "name": "wyandotte-chickens-ecommerce",
   "version": "1.0.0",
   "description": "Full-stack e-commerce platform for Wyandotte ornamental chickens",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
+    "start": "node backend/server.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon backend/server.js",
     "client": "cd frontend/frontend && npm start",
-    "build": "cd frontend/frontend && npm run build",
+    "build": "npm run install-client && cd frontend/frontend && npm run build",
     "install-client": "cd frontend/frontend && npm install",
-    "heroku-postbuild": "npm run install-client && npm run build"
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "express": "^4.18.2",
