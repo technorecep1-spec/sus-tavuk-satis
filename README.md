@@ -2,6 +2,8 @@
 
 A full-stack e-commerce and content platform for selling Wyandotte ornamental chickens and supplies. Built with the MERN stack (MongoDB, Express.js, React.js, Node.js) and styled with Tailwind CSS.
 
+🚀 **Live Site**: https://wyandottetr.onrender.com
+
 ## Features
 
 ### Public Features
