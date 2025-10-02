@@ -135,17 +135,17 @@ router.post('/login', [
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
-    if (!user) {
+    // req.user is already populated by auth middleware (without password)
+    if (!req.user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     res.json({
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isAdmin: user.checkAdminStatus()
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        isAdmin: req.user.checkAdminStatus()
       }
     });
   } catch (error) {
