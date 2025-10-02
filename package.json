@@ -2,9 +2,9 @@
   "name": "wyandotte-chickens-ecommerce",
   "version": "1.0.0",
   "description": "Full-stack e-commerce platform for Wyandotte ornamental chickens",
-  "main": "backend/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node backend/server.js",
+    "start": "node server.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon backend/server.js",
     "client": "cd frontend/frontend && npm start",
