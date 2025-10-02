@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wyandotte Tavuk Çiftliği</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 3rem; margin-bottom: 1rem; }
+        p { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
+        .buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(0,255,0,0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,0,0.3);
+        }
+        .api-list {
+            text-align: left;
+            margin-top: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+        .api-item {
+            margin: 0.5rem 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐓 Wyandotte Tavuk Çiftliği</h1>
+        <p>Premium Wyandotte tavukları ve çiftlik ürünleri</p>
+        
+        <div class="buttons">
+            <a href="/api/products" class="btn">Ürünler API</a>
+            <a href="/api/auth" class="btn">Auth API</a>
+            <a href="/api/blog" class="btn">Blog API</a>
+            <a href="/api/gallery" class="btn">Galeri API</a>
+        </div>
+        
+        <div class="status">
+            <h3>✅ Sistem Durumu</h3>
+            <p>Backend API çalışıyor</p>
+            <p>MongoDB bağlantısı aktif</p>
+            <p>E-posta doğrulama sistemi hazır</p>
+        </div>
+        
+        <div class="api-list">
+            <h4>📡 Mevcut API Endpoint'leri:</h4>
+            <div class="api-item">POST /api/auth/register - Kayıt ol</div>
+            <div class="api-item">POST /api/auth/login - Giriş yap</div>
+            <div class="api-item">GET /api/products - Ürünleri listele</div>
+            <div class="api-item">GET /api/blog - Blog yazıları</div>
+            <div class="api-item">GET /api/gallery - Galeri</div>
+        </div>
+        
+        <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
+            Frontend React uygulaması yakında yüklenecek...
+        </p>
+    </div>
+</body>
+</html>

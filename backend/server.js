@@ -59,21 +59,12 @@ if (process.env.NODE_ENV === 'production') {
       res.sendFile(path.join(buildPath, 'index.html'));
     });
   } else {
-    // Fallback: API only mode
-    console.log('Build directory not found, running in API-only mode');
+    // Fallback: Serve temporary HTML page
+    console.log('Build directory not found, serving temporary HTML page');
+    app.use(express.static(path.join(__dirname, '../public')));
+    
     app.get('/', (req, res) => {
-      res.json({ 
-        message: 'Wyandotte Chickens API is running!',
-        status: 'Build directory not found - API only mode',
-        endpoints: {
-          auth: '/api/auth',
-          products: '/api/products',
-          orders: '/api/orders',
-          blog: '/api/blog',
-          gallery: '/api/gallery',
-          admin: '/api/admin'
-        }
-      });
+      res.sendFile(path.join(__dirname, '../public/index.html'));
     });
   }
 } else {
