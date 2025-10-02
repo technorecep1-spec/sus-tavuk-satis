@@ -8,8 +8,9 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "nodemon backend/server.js",
     "client": "cd frontend/frontend && npm start",
-    "build": "npm run install-client && cd frontend/frontend && npm run build",
+    "build": "npm run install-client && npm run build-client",
     "install-client": "cd frontend/frontend && npm install",
+    "build-client": "cd frontend/frontend && npm run build",
     "heroku-postbuild": "npm run build"
   },
   "dependencies": {
