@@ -7,7 +7,7 @@ const createTransporter = async () => {
     console.log('No email config found, creating test account...');
     const testAccount = await nodemailer.createTestAccount();
     
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,
@@ -19,7 +19,7 @@ const createTransporter = async () => {
   }
 
   // Use provided email config
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
     secure: false, // true for 465, false for other ports

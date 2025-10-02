@@ -8,6 +8,9 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 
+// Trust proxy for Render.com
+app.set('trust proxy', 1);
+
 // Security middleware with CSP configuration
 app.use(helmet({
   contentSecurityPolicy: {
