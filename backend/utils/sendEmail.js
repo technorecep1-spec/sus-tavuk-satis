@@ -1,33 +1,53 @@
 const nodemailer = require('nodemailer');
 
-// Create transporter
+// Create transporter with timeout and better error handling
 const createTransporter = async () => {
-  // If no email config provided, use Ethereal for testing
-  if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
-    console.log('No email config found, creating test account...');
-    const testAccount = await nodemailer.createTestAccount();
-    
+  try {
+    // If no email config provided, use Ethereal for testing
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
+      console.log('No email config found, creating test account...');
+      
+      // Add timeout for test account creation
+      const testAccount = await Promise.race([
+        nodemailer.createTestAccount(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Test account creation timeout')), 10000)
+        )
+      ]);
+      
+      console.log('Test account created:', testAccount.user);
+      
+      return nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 5000,    // 5 seconds
+        socketTimeout: 10000,     // 10 seconds
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+    }
+
+    // Use provided email config
     return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: false, // true for 465, false for other ports
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
       auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
+  } catch (error) {
+    console.error('Error creating transporter:', error);
+    throw error;
   }
-
-  // Use provided email config
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
 };
 
 // Send bulk email to multiple recipients
@@ -36,11 +56,18 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
   let failed = 0;
   const results = [];
 
+  console.log(`Starting bulk email to ${recipients.length} recipients`);
+
   try {
+    console.log('Creating email transporter...');
     const transporter = await createTransporter();
+    console.log('Transporter created successfully');
     
-    // Send email to each recipient
-    for (const recipient of recipients) {
+    // Send email to each recipient with timeout
+    for (let i = 0; i < recipients.length; i++) {
+      const recipient = recipients[i];
+      console.log(`Sending email ${i + 1}/${recipients.length} to ${recipient.email}`);
+      
       try {
         const mailOptions = {
           from: `"Wyandotte Tavuk Çiftliği" <${process.env.EMAIL_USER || 'noreply@wyandotte.com'}>`,
@@ -72,12 +99,19 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
           `
         };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Email sent to ${recipient.email}:`, info.messageId);
+        // Add timeout to email sending
+        const info = await Promise.race([
+          transporter.sendMail(mailOptions),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Email sending timeout')), 30000)
+          )
+        ]);
+        
+        console.log(`✅ Email sent successfully to ${recipient.email}:`, info.messageId);
         
         // If using Ethereal, log the preview URL
         if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-          console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+          console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
         }
         
         successful++;
@@ -88,7 +122,7 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
         });
         
       } catch (error) {
-        console.error(`Failed to send email to ${recipient.email}:`, error);
+        console.error(`❌ Failed to send email to ${recipient.email}:`, error.message);
         failed++;
         results.push({
           email: recipient.email,
@@ -98,6 +132,8 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
       }
     }
     
+    console.log(`Bulk email completed: ${successful} successful, ${failed} failed`);
+    
     return {
       successful,
       failed,
@@ -105,7 +141,7 @@ const sendBulkEmail = async (recipients, subject, htmlMessage) => {
     };
     
   } catch (error) {
-    console.error('Bulk email error:', error);
+    console.error('❌ Bulk email error:', error);
     throw error;
   }
 };

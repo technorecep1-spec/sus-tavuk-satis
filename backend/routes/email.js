@@ -73,14 +73,24 @@ router.post('/send-bulk', [
       return res.status(400).json({ message: 'No recipients found' });
     }
 
-    // Send bulk email
-    const result = await sendBulkEmail(emailList, subject, message);
+    // Send bulk email with timeout
+    console.log(`Admin ${req.user.email} sending bulk email to ${emailList.length} recipients`);
+    
+    const result = await Promise.race([
+      sendBulkEmail(emailList, subject, message),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Bulk email operation timeout')), 60000) // 1 minute timeout
+      )
+    ]);
+
+    console.log(`Bulk email result: ${result.successful} successful, ${result.failed} failed`);
 
     res.json({
       message: `Email sent to ${result.successful} recipients`,
       successful: result.successful,
       failed: result.failed,
-      total: emailList.length
+      total: emailList.length,
+      details: result.results
     });
 
   } catch (error) {
@@ -109,10 +119,19 @@ router.post('/send-test', [
     const admin = req.user; // Already populated by auth middleware
 
     // Send test email to admin
-    const result = await sendBulkEmail([{
-      name: admin.name,
-      email: admin.email
-    }], `[TEST] ${subject}`, message);
+    console.log(`Admin ${admin.email} sending test email`);
+    
+    const result = await Promise.race([
+      sendBulkEmail([{
+        name: admin.name,
+        email: admin.email
+      }], `[TEST] ${subject}`, message),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Test email timeout')), 30000) // 30 seconds timeout
+      )
+    ]);
+
+    console.log('Test email result:', result);
 
     res.json({
       message: 'Test email sent successfully',
