@@ -133,7 +133,7 @@ const AdminEmail: React.FC = () => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`"${userName}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+    if (!window.confirm(`"${userName}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
       return;
     }
 
