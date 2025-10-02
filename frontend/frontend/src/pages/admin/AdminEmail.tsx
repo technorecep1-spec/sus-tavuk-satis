@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Mail, Send, Users, TestTube } from 'lucide-react';
+import { Mail, Send, Users, TestTube, Trash2 } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -18,6 +18,7 @@ const AdminEmail: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   
@@ -33,7 +34,7 @@ const AdminEmail: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/email/users', {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000'}/api/email/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -42,6 +43,10 @@ const AdminEmail: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
+      } else if (response.status === 401) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        // Redirect to login or refresh token
+        window.location.href = '/login';
       } else {
         toast.error('Kullanıcılar yüklenemedi');
       }
@@ -93,7 +98,8 @@ const AdminEmail: React.FC = () => {
             recipients: selectAll ? ['all'] : selectedUsers
           };
 
-      const response = await fetch(endpoint, {
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,6 +118,9 @@ const AdminEmail: React.FC = () => {
           setSelectedUsers([]);
           setSelectAll(false);
         }
+      } else if (response.status === 401) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        window.location.href = '/login';
       } else {
         toast.error(data.message || 'E-posta gönderilemedi');
       }
@@ -120,6 +129,41 @@ const AdminEmail: React.FC = () => {
       toast.error('E-posta gönderilirken hata oluştu');
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`"${userName}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
+      return;
+    }
+
+    setDeleting(userId);
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/email/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`${userName} kullanıcısı silindi`);
+        // Remove user from list
+        setUsers(users.filter(u => u._id !== userId));
+        // Remove from selected users if selected
+        setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      } else {
+        toast.error(data.message || 'Kullanıcı silinemedi');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Kullanıcı silinirken hata oluştu');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -223,24 +267,36 @@ const AdminEmail: React.FC = () => {
           </div>
           
           <div className="max-h-96 overflow-y-auto space-y-2">
-            {users.map((user) => (
+            {users.map((userItem) => (
               <div
-                key={user._id}
+                key={userItem._id}
                 className="flex items-center p-3 border border-gray-200 rounded-md hover:bg-gray-50"
               >
                 <input
                   type="checkbox"
-                  checked={selectedUsers.includes(user._id)}
-                  onChange={() => handleUserSelect(user._id)}
+                  checked={selectedUsers.includes(userItem._id)}
+                  onChange={() => handleUserSelect(userItem._id)}
                   className="mr-3"
                 />
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{user.name}</p>
-                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="font-medium text-gray-900">{userItem.name}</p>
+                  <p className="text-sm text-gray-600">{userItem.email}</p>
                   <p className="text-xs text-gray-500">
-                    Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                    Kayıt: {new Date(userItem.createdAt).toLocaleDateString('tr-TR')}
                   </p>
                 </div>
+                <button
+                  onClick={() => handleDeleteUser(userItem._id, userItem.name)}
+                  disabled={deleting === userItem._id || userItem._id === user?.id}
+                  className="ml-2 p-2 text-red-600 hover:bg-red-50 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={userItem._id === user?.id ? "Kendi hesabınızı silemezsiniz" : "Kullanıcıyı sil"}
+                >
+                  {deleting === userItem._id ? (
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             ))}
           </div>

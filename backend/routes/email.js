@@ -124,4 +124,41 @@ router.post('/send-test', [
   }
 });
 
+// Delete user
+router.delete('/users/:userId', auth, adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Prevent admin from deleting themselves
+    if (userId === req.user.userId) {
+      return res.status(400).json({ message: 'You cannot delete your own account' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent deleting other admins
+    if (user.checkAdminStatus()) {
+      return res.status(400).json({ message: 'Cannot delete admin users' });
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      message: 'User deleted successfully',
+      deletedUser: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: 'Failed to delete user' });
+  }
+});
+
 module.exports = router;
