@@ -23,7 +23,7 @@ import {
   Settings,
   CheckSquare,
   Square,
-  Grid3X3,
+  Grid,
   List,
   ChevronLeft,
   ChevronRight
@@ -529,7 +529,7 @@ const AdminProducts: React.FC = () => {
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
                 >
-                  <Grid3X3 className="w-4 h-4" />
+                  <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
