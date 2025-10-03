@@ -64,7 +64,7 @@ const GalleryAddModal: React.FC<GalleryAddModalProps> = ({ isOpen, onClose, onIm
       const imageUrl = URL.createObjectURL(file);
       
       // Get image dimensions
-      const img = new window.Image();
+      const img = document.createElement('img');
       img.onload = () => {
         setFormData(prev => ({
           ...prev,
