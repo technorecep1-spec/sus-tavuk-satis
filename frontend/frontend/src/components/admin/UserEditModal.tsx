@@ -6,9 +6,11 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  status: 'active' | 'inactive' | 'suspended';
-  adminNotes: string;
+  status?: 'active' | 'inactive' | 'suspended';
+  adminNotes?: string;
   createdAt: string;
+  isAdmin?: boolean;
+  lastLogin?: string;
 }
 
 interface UserEditModalProps {
@@ -37,7 +39,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({
       setFormData({
         name: user.name,
         email: user.email,
-        status: user.status,
+        status: user.status || 'active',
         adminNotes: user.adminNotes || ''
       });
     }

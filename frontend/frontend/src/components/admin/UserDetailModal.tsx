@@ -6,10 +6,11 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  status: 'active' | 'inactive' | 'suspended';
-  adminNotes: string;
+  status?: 'active' | 'inactive' | 'suspended';
+  adminNotes?: string;
   createdAt: string;
   lastLogin?: string;
+  isAdmin?: boolean;
 }
 
 interface Order {
@@ -220,8 +221,8 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-600 mb-2">Durum</p>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(userDetails?.status || user.status)}`}>
-                      {getStatusText(userDetails?.status || user.status)}
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(userDetails?.status || user.status || 'active')}`}>
+                      {getStatusText(userDetails?.status || user.status || 'active')}
                     </span>
                   </div>
                   <div>
