@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ProductAddModal from '../../components/admin/ProductAddModal';
+import ProductEditModal from '../../components/admin/ProductEditModal';
+import ProductDeleteModal from '../../components/admin/ProductDeleteModal';
 import toast from 'react-hot-toast';
 import { 
   Plus, 
@@ -51,6 +53,11 @@ const AdminProducts: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const productsPerPage = 12;
 
@@ -166,6 +173,67 @@ const AdminProducts: React.FC = () => {
   const handleProductAdded = (newProduct: Product) => {
     setProducts(prev => [newProduct, ...prev]);
     setShowAddModal(false);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setShowEditModal(true);
+  };
+
+  const handleProductUpdated = (updatedProduct: Product) => {
+    setProducts(prev => prev.map(p => p._id === updatedProduct._id ? updatedProduct : p));
+    setShowEditModal(false);
+    setEditingProduct(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingProduct(null);
+  };
+
+  const handleDeleteProduct = (product: Product) => {
+    setDeletingProduct(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deletingProduct) return;
+
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      
+      const response = await fetch(`${baseUrl}/api/products/${deletingProduct._id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('Ürün başarıyla silindi');
+        setProducts(prev => prev.filter(p => p._id !== deletingProduct._id));
+        setShowDeleteModal(false);
+        setDeletingProduct(null);
+      } else if (response.status === 401) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        window.location.href = '/login';
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Ürün silinirken hata oluştu');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Ürün silinirken hata oluştu');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeletingProduct(null);
   };
 
   if (!user?.isAdmin) {
@@ -444,10 +512,16 @@ const AdminProducts: React.FC = () => {
                             <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
+                            <button 
+                              onClick={() => handleEditProduct(product)}
+                              className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                            <button 
+                              onClick={() => handleDeleteProduct(product)}
+                              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -500,10 +574,16 @@ const AdminProducts: React.FC = () => {
                             <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-green-600 transition-colors">
+                            <button 
+                              onClick={() => handleEditProduct(product)}
+                              className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            >
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
+                            <button 
+                              onClick={() => handleDeleteProduct(product)}
+                              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -568,6 +648,23 @@ const AdminProducts: React.FC = () => {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onProductAdded={handleProductAdded}
+        />
+
+        {/* Product Edit Modal */}
+        <ProductEditModal
+          isOpen={showEditModal}
+          onClose={handleCloseEditModal}
+          onProductUpdated={handleProductUpdated}
+          product={editingProduct}
+        />
+
+        {/* Product Delete Modal */}
+        <ProductDeleteModal
+          isOpen={showDeleteModal}
+          onClose={handleCloseDeleteModal}
+          onConfirm={confirmDeleteProduct}
+          product={deletingProduct}
+          loading={deleting}
         />
       </div>
     </div>
