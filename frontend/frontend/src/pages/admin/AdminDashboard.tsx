@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
+import { Link } from 'react-router-dom';
 import { Users, Package, ShoppingCart, FileText, Image, DollarSign, Mail } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -161,8 +162,8 @@ const AdminDashboard: React.FC = () => {
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('admin.quickActions')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a
-              href="/admin/products"
+            <Link
+              to="/admin/products"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -172,10 +173,10 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">{t('admin.manageProductsDesc')}</p>
                 </div>
               </div>
-            </a>
+            </Link>
 
-            <a
-              href="/admin/orders"
+            <Link
+              to="/admin/orders"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -185,10 +186,10 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">{t('admin.manageOrdersDesc')}</p>
                 </div>
               </div>
-            </a>
+            </Link>
 
-            <a
-              href="/admin/blog"
+            <Link
+              to="/admin/blog"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -198,10 +199,10 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">{t('admin.manageBlogDesc')}</p>
                 </div>
               </div>
-            </a>
+            </Link>
 
-            <a
-              href="/admin/gallery"
+            <Link
+              to="/admin/gallery"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -211,9 +212,9 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">{t('admin.manageGalleryDesc')}</p>
                 </div>
               </div>
-            </a>
-            <a
-              href="/admin/email"
+            </Link>
+            <Link
+              to="/admin/email"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -223,9 +224,9 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">Müşterilere e-posta gönder</p>
                 </div>
               </div>
-            </a>
-            <a
-              href="/admin/users"
+            </Link>
+            <Link
+              to="/admin/users"
               className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="flex items-center">
@@ -235,7 +236,7 @@ const AdminDashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">Kullanıcıları görüntüle ve yönet</p>
                 </div>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

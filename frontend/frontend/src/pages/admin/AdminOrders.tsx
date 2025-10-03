@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -23,7 +24,8 @@ import {
   XCircle,
   CheckSquare,
   Square,
-  Settings
+  Settings,
+  ArrowLeft
 } from 'lucide-react';
 
 interface Order {
@@ -336,6 +338,17 @@ const AdminOrders: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Link
+          to="/admin"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Admin Paneline Dön
+        </Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
           <ShoppingBag className="w-8 h-8 mr-3 text-blue-600" />

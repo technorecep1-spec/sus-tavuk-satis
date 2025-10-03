@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import UserEditModal from '../../components/admin/UserEditModal';
 import UserDetailModal from '../../components/admin/UserDetailModal';
 import toast from 'react-hot-toast';
-import { Users, Trash2, Shield, Calendar, Mail, Search, Filter, Edit, Eye, Download } from 'lucide-react';
+import { Users, Trash2, Shield, Calendar, Mail, Search, Filter, Edit, Eye, Download, ArrowLeft } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -254,6 +255,17 @@ const AdminUsers: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Link
+          to="/admin"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Admin Paneline Dön
+        </Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
           <Users className="w-8 h-8 mr-3 text-blue-600" />

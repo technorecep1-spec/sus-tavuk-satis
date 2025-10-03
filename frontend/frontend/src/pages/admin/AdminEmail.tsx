@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Mail, Send, Users, TestTube, Trash2 } from 'lucide-react';
+import { Mail, Send, Users, TestTube, Trash2, ArrowLeft } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -181,6 +182,17 @@ const AdminEmail: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Link
+          to="/admin"
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Admin Paneline Dön
+        </Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           📧 Toplu E-posta Gönderimi
