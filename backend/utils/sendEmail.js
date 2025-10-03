@@ -1,16 +1,28 @@
-// Safely require SendGrid
+const nodemailer = require('nodemailer');
+
+// Initialize Gmail SMTP
+const initializeGmailSMTP = () => {
+  if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    console.log('✅ Gmail SMTP configuration found');
+    return true;
+  } else {
+    console.log('❌ Gmail SMTP configuration not found');
+    return false;
+  }
+};
+
+// Initialize SendGrid (fallback)
 let sgMail;
 try {
   sgMail = require('@sendgrid/mail');
 } catch (error) {
-  console.log('⚠️ SendGrid package not found, using mock mode');
+  console.log('⚠️ SendGrid package not found');
   sgMail = null;
 }
 
-// Initialize SendGrid
 const initializeSendGrid = () => {
   if (!sgMail) {
-    console.log('❌ SendGrid package not available, using mock mode');
+    console.log('❌ SendGrid package not available');
     return false;
   }
   
@@ -24,68 +36,83 @@ const initializeSendGrid = () => {
       return false;
     }
   } else {
-    console.log('❌ SENDGRID_API_KEY not found, using mock mode');
+    console.log('❌ SENDGRID_API_KEY not found');
     return false;
   }
 };
 
-// Create transporter with SendGrid fallback to mock mode
+// Create transporter with Gmail SMTP, SendGrid fallback, or mock mode
 const createTransporter = async () => {
   try {
+    // Try Gmail SMTP first
+    const isGmailReady = initializeGmailSMTP();
+    if (isGmailReady) {
+      console.log('Using Gmail SMTP');
+      return nodemailer.createTransporter({
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        secure: false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+    }
+
+    // Try SendGrid as fallback
     const isSendGridReady = initializeSendGrid();
-    
-    if (!isSendGridReady) {
-      console.log('Using mock email mode - no SendGrid API key found');
-      
-      // Return mock transporter
+    if (isSendGridReady) {
+      console.log('Using SendGrid API');
       return {
         sendMail: async (mailOptions) => {
-          console.log('📧 MOCK EMAIL SENT:');
-          console.log('  To:', mailOptions.to);
-          console.log('  Subject:', mailOptions.subject);
-          console.log('  From:', mailOptions.from);
-          console.log('  Content preview:', mailOptions.html ? mailOptions.html.substring(0, 100) + '...' : 'No content');
-          
-          // Simulate email sending delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          return {
-            messageId: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            response: 'Mock email sent successfully'
-          };
+          try {
+            if (!sgMail) {
+              throw new Error('SendGrid not available');
+            }
+
+            const msg = {
+              to: mailOptions.to,
+              from: {
+                email: 'technorecep_1@gmail.com',
+                name: 'Wyandotte Tavuk Çiftliği'
+              },
+              subject: mailOptions.subject,
+              html: mailOptions.html,
+            };
+
+            const response = await sgMail.send(msg);
+            console.log('✅ SendGrid email sent successfully:', response[0].statusCode);
+            
+            return {
+              messageId: response[0].headers['x-message-id'] || `sg-${Date.now()}`,
+              response: `SendGrid: ${response[0].statusCode}`
+            };
+          } catch (error) {
+            console.error('❌ SendGrid error:', error.message);
+            throw error;
+          }
         }
       };
     }
-
-    // Return SendGrid transporter
+    
+    // Fallback to mock mode
+    console.log('Using mock email mode - no email service configured');
+    
     return {
       sendMail: async (mailOptions) => {
-        try {
-          if (!sgMail) {
-            throw new Error('SendGrid not available');
-          }
-
-          const msg = {
-            to: mailOptions.to,
-            from: {
-              email: 'technorecep_1@gmail.com',
-              name: 'Wyandotte Tavuk Çiftliği'
-            },
-            subject: mailOptions.subject,
-            html: mailOptions.html,
-          };
-
-          const response = await sgMail.send(msg);
-          console.log('✅ SendGrid email sent successfully:', response[0].statusCode);
-          
-          return {
-            messageId: response[0].headers['x-message-id'] || `sg-${Date.now()}`,
-            response: `SendGrid: ${response[0].statusCode}`
-          };
-        } catch (error) {
-          console.error('❌ SendGrid error:', error.message);
-          throw error;
-        }
+        console.log('📧 MOCK EMAIL SENT:');
+        console.log('  To:', mailOptions.to);
+        console.log('  Subject:', mailOptions.subject);
+        console.log('  From:', mailOptions.from);
+        console.log('  Content preview:', mailOptions.html ? mailOptions.html.substring(0, 100) + '...' : 'No content');
+        
+        // Simulate email sending delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return {
+          messageId: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          response: 'Mock email sent successfully'
+        };
       }
     };
   } catch (error) {
