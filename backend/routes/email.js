@@ -79,7 +79,7 @@ router.post('/send-bulk', [
     const result = await Promise.race([
       sendBulkEmail(emailList, subject, message),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Bulk email operation timeout')), 60000) // 1 minute timeout
+        setTimeout(() => reject(new Error('Bulk email operation timeout')), 120000) // 2 minutes timeout - increased for cloud platforms
       )
     ]);
 
@@ -127,7 +127,7 @@ router.post('/send-test', [
         email: admin.email
       }], `[TEST] ${subject}`, message),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Test email timeout')), 30000) // 30 seconds timeout
+        setTimeout(() => reject(new Error('Test email timeout')), 60000) // 60 seconds timeout - increased for cloud platforms
       )
     ]);
 
