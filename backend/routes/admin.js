@@ -575,4 +575,173 @@ router.post('/orders/:orderId/notify', [auth, adminAuth], async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/orders/bulk/status
+// @desc    Update multiple orders status
+// @access  Private (Admin)
+router.put('/orders/bulk/status', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderIds, status, statusNote } = req.body;
+    
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ message: 'Order IDs are required' });
+    }
+
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+
+    const validStatuses = ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+
+    // Limit bulk operations to prevent server overload
+    if (orderIds.length > 50) {
+      return res.status(400).json({ message: 'Maximum 50 orders can be updated at once' });
+    }
+
+    const updateData = {
+      status: status,
+      statusHistory: {
+        $push: {
+          status: status,
+          changedBy: req.user._id,
+          changedAt: new Date(),
+          note: statusNote || ''
+        }
+      }
+    };
+
+    // Auto-update delivery status for completed orders
+    if (status === 'Completed') {
+      updateData.isDelivered = true;
+      updateData.deliveredAt = new Date();
+    }
+
+    const result = await Order.updateMany(
+      { _id: { $in: orderIds } },
+      updateData
+    );
+
+    res.json({
+      message: `${result.modifiedCount} orders updated successfully`,
+      updatedCount: result.modifiedCount,
+      totalRequested: orderIds.length
+    });
+  } catch (error) {
+    console.error('Bulk status update error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/orders/bulk/notify
+// @desc    Send notification to multiple customers
+// @access  Private (Admin)
+router.post('/orders/bulk/notify', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderIds, message, type = 'status_update' } = req.body;
+    
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ message: 'Order IDs are required' });
+    }
+
+    // Limit bulk operations to prevent server overload
+    if (orderIds.length > 20) {
+      return res.status(400).json({ message: 'Maximum 20 orders can be notified at once' });
+    }
+
+    const orders = await Order.find({ _id: { $in: orderIds } })
+      .populate('user', 'name email');
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found' });
+    }
+
+    // Prepare email list
+    const emailList = orders.map(order => ({
+      name: order.user.name,
+      email: order.user.email,
+      orderId: order._id
+    }));
+
+    // Send bulk email notification
+    const { sendBulkEmail } = require('../utils/sendEmail');
+    
+    let subject = 'Sipariş Güncellemesi';
+    let emailMessage = message || 'Siparişiniz güncellenmiştir.';
+    
+    if (type === 'status_update') {
+      subject = 'Sipariş Durumu Güncellendi';
+      emailMessage = `
+        <h2>Sipariş Durumu Güncellendi</h2>
+        <p>Merhaba,</p>
+        <p>Siparişiniz güncellenmiştir.</p>
+        <p>Detaylar için hesabınıza giriş yapabilirsiniz.</p>
+        <p>İyi günler,<br>Yönetici</p>
+      `;
+    }
+
+    const result = await sendBulkEmail(emailList, subject, emailMessage);
+
+    res.json({
+      message: `Notifications sent to ${result.successful} customers`,
+      successful: result.successful,
+      failed: result.failed,
+      total: emailList.length
+    });
+  } catch (error) {
+    console.error('Bulk notification error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/orders/bulk/export
+// @desc    Export selected orders to CSV
+// @access  Private (Admin)
+router.post('/orders/bulk/export', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderIds } = req.body;
+    
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ message: 'Order IDs are required' });
+    }
+
+    // Limit bulk operations to prevent server overload
+    if (orderIds.length > 100) {
+      return res.status(400).json({ message: 'Maximum 100 orders can be exported at once' });
+    }
+
+    const orders = await Order.find({ _id: { $in: orderIds } })
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found' });
+    }
+
+    // Generate CSV content
+    const csvContent = [
+      ['Sipariş No', 'Müşteri', 'E-posta', 'Durum', 'Tutar', 'Ödeme', 'Teslimat', 'Tarih', 'Kargo Takip'],
+      ...orders.map(order => [
+        order._id.slice(-8),
+        order.user.name,
+        order.user.email,
+        order.status,
+        order.totalPrice.toFixed(2),
+        order.isPaid ? 'Ödendi' : 'Ödenmedi',
+        order.isDelivered ? 'Teslim Edildi' : 'Teslim Edilmedi',
+        new Date(order.createdAt).toLocaleDateString('tr-TR'),
+        order.trackingNumber || ''
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="secilen_siparisler_${new Date().toISOString().split('T')[0]}.csv"`);
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Bulk export error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

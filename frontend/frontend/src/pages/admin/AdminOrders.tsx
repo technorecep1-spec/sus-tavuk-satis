@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import OrderDetailModal from '../../components/admin/OrderDetailModal';
 import OrderEditModal from '../../components/admin/OrderEditModal';
+import BulkOperationsModal from '../../components/admin/BulkOperationsModal';
 import toast from 'react-hot-toast';
 import { 
   ShoppingBag, 
@@ -19,7 +20,10 @@ import {
   Truck,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  CheckSquare,
+  Square,
+  Settings
 } from 'lucide-react';
 
 interface Order {
@@ -103,6 +107,11 @@ const AdminOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  
+  // Bulk operations
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -190,10 +199,43 @@ const AdminOrders: React.FC = () => {
     setFilteredOrders(filteredOrders.map(o => o._id === updatedOrder._id ? updatedOrder : o));
   };
 
+  const handleBulkOrdersUpdated = () => {
+    fetchOrders(); // Refresh the orders list
+    setSelectedOrders([]);
+    setSelectAll(false);
+  };
+
   const handleCloseModals = () => {
     setShowDetailModal(false);
     setShowEditModal(false);
+    setShowBulkModal(false);
     setSelectedOrder(null);
+  };
+
+  const handleSelectOrder = (orderId: string) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedOrders([]);
+      setSelectAll(false);
+    } else {
+      setSelectedOrders(filteredOrders.map(order => order._id));
+      setSelectAll(true);
+    }
+  };
+
+  const handleBulkOperations = () => {
+    if (selectedOrders.length === 0) {
+      toast.error('Lütfen en az bir sipariş seçin');
+      return;
+    }
+    setShowBulkModal(true);
   };
 
   const handleExportCSV = () => {
@@ -409,7 +451,7 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Payment Method Filter */}
           <div>
             <select
@@ -440,6 +482,18 @@ const AdminOrders: React.FC = () => {
               onChange={(e) => setAmountFilter({ ...amountFilter, max: e.target.value })}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          {/* Bulk Operations Button */}
+          <div>
+            <button
+              onClick={handleBulkOperations}
+              disabled={selectedOrders.length === 0}
+              className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Toplu İşlemler ({selectedOrders.length})
+            </button>
           </div>
 
           {/* Export Button */}
@@ -479,6 +533,14 @@ const AdminOrders: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Sipariş No
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -504,6 +566,14 @@ const AdminOrders: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.map((order) => (
                 <tr key={order._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrders.includes(order._id)}
+                      onChange={() => handleSelectOrder(order._id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     #{order._id.slice(-8)}
                   </td>
@@ -615,6 +685,13 @@ const AdminOrders: React.FC = () => {
         isOpen={showEditModal}
         onClose={handleCloseModals}
         onOrderUpdated={handleOrderUpdated}
+      />
+
+      <BulkOperationsModal
+        selectedOrders={selectedOrders}
+        isOpen={showBulkModal}
+        onClose={handleCloseModals}
+        onOrdersUpdated={handleBulkOrdersUpdated}
       />
     </div>
   );
