@@ -1,31 +1,38 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const BlogPost = require('../models/BlogPost');
+const Blog = require('../models/Blog');
 const { auth, adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
 // @route   GET /api/blog
-// @desc    Get all blog posts
+// @desc    Get all published blog posts
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 10, tag } = req.query;
+    const { category, search, page = 1, limit = 10 } = req.query;
     
-    let query = { isPublished: true };
+    let query = { status: 'published' };
     
-    if (tag) {
-      query.tags = { $in: [tag] };
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
     }
 
-    const posts = await BlogPost.find(query)
+    const posts = await Blog.find(query)
       .populate('author', 'name')
-      .select('-content')
-      .sort({ createdAt: -1 })
+      .sort({ publishedAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const total = await BlogPost.countDocuments(query);
+    const total = await Blog.countDocuments(query);
 
     res.json({
       posts,
@@ -39,21 +46,90 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/blog/admin
+// @desc    Get all blog posts for admin
+// @access  Private (Admin)
+router.get('/admin', [auth, adminAuth], async (req, res) => {
+  try {
+    const { category, search, status, page = 1, limit = 20 } = req.query;
+    
+    let query = {};
+    
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const posts = await Blog.find(query)
+      .populate('author', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Blog.countDocuments(query);
+
+    // Get statistics
+    const stats = await Blog.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalPosts: { $sum: 1 },
+          publishedPosts: {
+            $sum: { $cond: [{ $eq: ['$status', 'published'] }, 1, 0] }
+          },
+          draftPosts: {
+            $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] }
+          },
+          categories: { $addToSet: '$category' }
+        }
+      }
+    ]);
+
+    const categoryStats = await Blog.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.json({
+      posts,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+      stats: stats[0] || { totalPosts: 0, publishedPosts: 0, draftPosts: 0, categories: [] },
+      categoryStats
+    });
+  } catch (error) {
+    console.error('Get admin blog posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET /api/blog/:slug
 // @desc    Get single blog post by slug
 // @access  Public
 router.get('/:slug', async (req, res) => {
   try {
-    const post = await BlogPost.findOne({ slug: req.params.slug })
+    const post = await Blog.findOne({ slug: req.params.slug, status: 'published' })
       .populate('author', 'name');
-
+    
     if (!post) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
-
-    // Increment view count
-    post.viewCount += 1;
-    await post.save();
 
     res.json(post);
   } catch (error) {
@@ -68,9 +144,7 @@ router.get('/:slug', async (req, res) => {
 router.post('/', [auth, adminAuth], [
   body('title').trim().notEmpty().withMessage('Title is required'),
   body('content').trim().notEmpty().withMessage('Content is required'),
-  body('excerpt').optional().trim().isLength({ max: 300 }).withMessage('Excerpt cannot exceed 300 characters'),
-  body('tags').optional().isArray().withMessage('Tags must be an array'),
-  body('featuredImage').optional().isURL().withMessage('Featured image must be a valid URL')
+  body('category').isIn(['Technology', 'Health', 'Education', 'News', 'Lifestyle', 'Other']).withMessage('Invalid category')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -78,15 +152,16 @@ router.post('/', [auth, adminAuth], [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const blogPost = new BlogPost({
+    const blogData = {
       ...req.body,
-      author: req.user._id
-    });
+      author: req.user.id
+    };
 
-    await blogPost.save();
-    await blogPost.populate('author', 'name');
+    const post = new Blog(blogData);
+    await post.save();
 
-    res.status(201).json(blogPost);
+    const populatedPost = await Blog.findById(post._id).populate('author', 'name');
+    res.status(201).json(populatedPost);
   } catch (error) {
     console.error('Create blog post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -99,9 +174,7 @@ router.post('/', [auth, adminAuth], [
 router.put('/:id', [auth, adminAuth], [
   body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
   body('content').optional().trim().notEmpty().withMessage('Content cannot be empty'),
-  body('excerpt').optional().trim().isLength({ max: 300 }).withMessage('Excerpt cannot exceed 300 characters'),
-  body('tags').optional().isArray().withMessage('Tags must be an array'),
-  body('featuredImage').optional().isURL().withMessage('Featured image must be a valid URL')
+  body('category').optional().isIn(['Technology', 'Health', 'Education', 'News', 'Lifestyle', 'Other']).withMessage('Invalid category')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -109,17 +182,17 @@ router.put('/:id', [auth, adminAuth], [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const blogPost = await BlogPost.findByIdAndUpdate(
+    const post = await Blog.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     ).populate('author', 'name');
 
-    if (!blogPost) {
+    if (!post) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
 
-    res.json(blogPost);
+    res.json(post);
   } catch (error) {
     console.error('Update blog post error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -131,9 +204,9 @@ router.put('/:id', [auth, adminAuth], [
 // @access  Private (Admin)
 router.delete('/:id', [auth, adminAuth], async (req, res) => {
   try {
-    const blogPost = await BlogPost.findByIdAndDelete(req.params.id);
+    const post = await Blog.findByIdAndDelete(req.params.id);
 
-    if (!blogPost) {
+    if (!post) {
       return res.status(404).json({ message: 'Blog post not found' });
     }
 
@@ -144,15 +217,82 @@ router.delete('/:id', [auth, adminAuth], async (req, res) => {
   }
 });
 
-// @route   GET /api/blog/tags/all
-// @desc    Get all unique tags
-// @access  Public
-router.get('/tags/all', async (req, res) => {
+// @route   PUT /api/blog/bulk-update
+// @desc    Bulk update blog posts
+// @access  Private (Admin)
+router.put('/bulk-update', [auth, adminAuth], async (req, res) => {
   try {
-    const tags = await BlogPost.distinct('tags', { isPublished: true });
-    res.json(tags);
+    const { postIds, action, data } = req.body;
+
+    if (!postIds || !Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ message: 'Post IDs are required' });
+    }
+
+    if (postIds.length > 20) {
+      return res.status(400).json({ message: 'Maximum 20 posts can be updated at once' });
+    }
+
+    let updateData = {};
+    
+    switch (action) {
+      case 'status':
+        updateData.status = data.status;
+        if (data.status === 'published') {
+          updateData.publishedAt = Date.now();
+        }
+        break;
+      case 'category':
+        updateData.category = data.category;
+        break;
+      case 'tags':
+        if (data.action === 'add') {
+          updateData.$addToSet = { tags: { $each: data.tags } };
+        } else if (data.action === 'remove') {
+          updateData.$pull = { tags: { $in: data.tags } };
+        }
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    const result = await Blog.updateMany(
+      { _id: { $in: postIds } },
+      updateData
+    );
+
+    res.json({ 
+      message: `${result.modifiedCount} posts updated successfully`,
+      modifiedCount: result.modifiedCount
+    });
   } catch (error) {
-    console.error('Get tags error:', error);
+    console.error('Bulk update blog posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/blog/bulk-delete
+// @desc    Bulk delete blog posts
+// @access  Private (Admin)
+router.delete('/bulk-delete', [auth, adminAuth], async (req, res) => {
+  try {
+    const { postIds } = req.body;
+
+    if (!postIds || !Array.isArray(postIds) || postIds.length === 0) {
+      return res.status(400).json({ message: 'Post IDs are required' });
+    }
+
+    if (postIds.length > 10) {
+      return res.status(400).json({ message: 'Maximum 10 posts can be deleted at once' });
+    }
+
+    const result = await Blog.deleteMany({ _id: { $in: postIds } });
+
+    res.json({ 
+      message: `${result.deletedCount} posts deleted successfully`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete blog posts error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
