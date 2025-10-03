@@ -1,11 +1,28 @@
-const sgMail = require('@sendgrid/mail');
+// Safely require SendGrid
+let sgMail;
+try {
+  sgMail = require('@sendgrid/mail');
+} catch (error) {
+  console.log('⚠️ SendGrid package not found, using mock mode');
+  sgMail = null;
+}
 
 // Initialize SendGrid
 const initializeSendGrid = () => {
+  if (!sgMail) {
+    console.log('❌ SendGrid package not available, using mock mode');
+    return false;
+  }
+  
   if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    console.log('✅ SendGrid initialized successfully');
-    return true;
+    try {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      console.log('✅ SendGrid initialized successfully');
+      return true;
+    } catch (error) {
+      console.log('❌ SendGrid API key error:', error.message);
+      return false;
+    }
   } else {
     console.log('❌ SENDGRID_API_KEY not found, using mock mode');
     return false;
@@ -44,6 +61,10 @@ const createTransporter = async () => {
     return {
       sendMail: async (mailOptions) => {
         try {
+          if (!sgMail) {
+            throw new Error('SendGrid not available');
+          }
+
           const msg = {
             to: mailOptions.to,
             from: {
@@ -58,11 +79,11 @@ const createTransporter = async () => {
           console.log('✅ SendGrid email sent successfully:', response[0].statusCode);
           
           return {
-            messageId: response[0].headers['x-message-id'],
+            messageId: response[0].headers['x-message-id'] || `sg-${Date.now()}`,
             response: `SendGrid: ${response[0].statusCode}`
           };
         } catch (error) {
-          console.error('❌ SendGrid error:', error);
+          console.error('❌ SendGrid error:', error.message);
           throw error;
         }
       }
