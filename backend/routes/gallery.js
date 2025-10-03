@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const GalleryImage = require('../models/GalleryImage');
+const Gallery = require('../models/Gallery');
 const { auth, adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -10,19 +10,28 @@ const router = express.Router();
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const { category, page = 1, limit = 20 } = req.query;
+    const { category, search, page = 1, limit = 12 } = req.query;
     
-    let query = {};
+    let query = { isActive: true };
+    
     if (category && category !== 'all') {
       query.category = category;
     }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
+    }
 
-    const images = await GalleryImage.find(query)
-      .sort({ uploadedAt: -1 })
+    const images = await Gallery.find(query)
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const total = await GalleryImage.countDocuments(query);
+    const total = await Gallery.countDocuments(query);
 
     res.json({
       images,
@@ -36,30 +45,101 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/gallery/featured
-// @desc    Get featured gallery images
-// @access  Public
-router.get('/featured', async (req, res) => {
+// @route   GET /api/gallery/admin
+// @desc    Get all gallery images for admin
+// @access  Private (Admin)
+router.get('/admin', [auth, adminAuth], async (req, res) => {
   try {
-    const images = await GalleryImage.find({ isFeatured: true })
-      .sort({ uploadedAt: -1 })
-      .limit(6);
+    const { category, search, status, page = 1, limit = 20 } = req.query;
+    
+    let query = {};
+    
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (status && status !== 'all') {
+      query.isActive = status === 'active';
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $regex: search, $options: 'i' } }
+      ];
+    }
 
-    res.json(images);
+    const images = await Gallery.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Gallery.countDocuments(query);
+
+    // Get statistics
+    const stats = await Gallery.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalImages: { $sum: 1 },
+          activeImages: {
+            $sum: { $cond: [{ $eq: ['$isActive', true] }, 1, 0] }
+          },
+          totalSize: { $sum: '$fileSize' },
+          categories: { $addToSet: '$category' }
+        }
+      }
+    ]);
+
+    const categoryStats = await Gallery.aggregate([
+      {
+        $group: {
+          _id: '$category',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    res.json({
+      images,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+      stats: stats[0] || { totalImages: 0, activeImages: 0, totalSize: 0, categories: [] },
+      categoryStats
+    });
   } catch (error) {
-    console.error('Get featured images error:', error);
+    console.error('Get admin gallery images error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/gallery/:id
+// @desc    Get single gallery image
+// @access  Public
+router.get('/:id', async (req, res) => {
+  try {
+    const image = await Gallery.findById(req.params.id);
+    
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    res.json(image);
+  } catch (error) {
+    console.error('Get gallery image error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // @route   POST /api/gallery
-// @desc    Add new gallery image
+// @desc    Create new gallery image
 // @access  Private (Admin)
 router.post('/', [auth, adminAuth], [
-  body('imageUrl').isURL().withMessage('Image URL must be valid'),
-  body('caption').optional().trim().isLength({ max: 200 }).withMessage('Caption cannot exceed 200 characters'),
-  body('category').optional().isIn(['Chicks', 'Hens', 'Roosters', 'Varieties', 'Farm', 'Equipment']).withMessage('Invalid category'),
-  body('isFeatured').optional().isBoolean().withMessage('isFeatured must be boolean')
+  body('title').trim().notEmpty().withMessage('Title is required'),
+  body('imageUrl').notEmpty().withMessage('Image URL is required'),
+  body('category').isIn(['Nature', 'Animals', 'Products', 'Events', 'Other']).withMessage('Invalid category')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -67,12 +147,12 @@ router.post('/', [auth, adminAuth], [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const galleryImage = new GalleryImage(req.body);
-    await galleryImage.save();
+    const image = new Gallery(req.body);
+    await image.save();
 
-    res.status(201).json(galleryImage);
+    res.status(201).json(image);
   } catch (error) {
-    console.error('Add gallery image error:', error);
+    console.error('Create gallery image error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -81,9 +161,8 @@ router.post('/', [auth, adminAuth], [
 // @desc    Update gallery image
 // @access  Private (Admin)
 router.put('/:id', [auth, adminAuth], [
-  body('caption').optional().trim().isLength({ max: 200 }).withMessage('Caption cannot exceed 200 characters'),
-  body('category').optional().isIn(['Chicks', 'Hens', 'Roosters', 'Varieties', 'Farm', 'Equipment']).withMessage('Invalid category'),
-  body('isFeatured').optional().isBoolean().withMessage('isFeatured must be boolean')
+  body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
+  body('category').optional().isIn(['Nature', 'Animals', 'Products', 'Events', 'Other']).withMessage('Invalid category')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -91,17 +170,17 @@ router.put('/:id', [auth, adminAuth], [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const galleryImage = await GalleryImage.findByIdAndUpdate(
+    const image = await Gallery.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
 
-    if (!galleryImage) {
-      return res.status(404).json({ message: 'Gallery image not found' });
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
     }
 
-    res.json(galleryImage);
+    res.json(image);
   } catch (error) {
     console.error('Update gallery image error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -113,15 +192,92 @@ router.put('/:id', [auth, adminAuth], [
 // @access  Private (Admin)
 router.delete('/:id', [auth, adminAuth], async (req, res) => {
   try {
-    const galleryImage = await GalleryImage.findByIdAndDelete(req.params.id);
+    const image = await Gallery.findByIdAndDelete(req.params.id);
 
-    if (!galleryImage) {
-      return res.status(404).json({ message: 'Gallery image not found' });
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
     }
 
-    res.json({ message: 'Gallery image deleted successfully' });
+    res.json({ message: 'Image deleted successfully' });
   } catch (error) {
     console.error('Delete gallery image error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/gallery/bulk-update
+// @desc    Bulk update gallery images
+// @access  Private (Admin)
+router.put('/bulk-update', [auth, adminAuth], async (req, res) => {
+  try {
+    const { imageIds, action, data } = req.body;
+
+    if (!imageIds || !Array.isArray(imageIds) || imageIds.length === 0) {
+      return res.status(400).json({ message: 'Image IDs are required' });
+    }
+
+    if (imageIds.length > 20) {
+      return res.status(400).json({ message: 'Maximum 20 images can be updated at once' });
+    }
+
+    let updateData = {};
+    
+    switch (action) {
+      case 'category':
+        updateData.category = data.category;
+        break;
+      case 'status':
+        updateData.isActive = data.status === 'active';
+        break;
+      case 'tags':
+        if (data.action === 'add') {
+          updateData.$addToSet = { tags: { $each: data.tags } };
+        } else if (data.action === 'remove') {
+          updateData.$pull = { tags: { $in: data.tags } };
+        }
+        break;
+      default:
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    const result = await Gallery.updateMany(
+      { _id: { $in: imageIds } },
+      updateData
+    );
+
+    res.json({ 
+      message: `${result.modifiedCount} images updated successfully`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Bulk update gallery images error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   DELETE /api/gallery/bulk-delete
+// @desc    Bulk delete gallery images
+// @access  Private (Admin)
+router.delete('/bulk-delete', [auth, adminAuth], async (req, res) => {
+  try {
+    const { imageIds } = req.body;
+
+    if (!imageIds || !Array.isArray(imageIds) || imageIds.length === 0) {
+      return res.status(400).json({ message: 'Image IDs are required' });
+    }
+
+    if (imageIds.length > 10) {
+      return res.status(400).json({ message: 'Maximum 10 images can be deleted at once' });
+    }
+
+    const result = await Gallery.deleteMany({ _id: { $in: imageIds } });
+
+    res.json({ 
+      message: `${result.deletedCount} images deleted successfully`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Bulk delete gallery images error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
