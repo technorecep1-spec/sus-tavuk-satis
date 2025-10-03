@@ -336,4 +336,243 @@ router.post('/users/:userId/reset-password', [auth, adminAuth], async (req, res)
   }
 });
 
+// @route   GET /api/admin/orders
+// @desc    Get all orders with filters
+// @access  Private (Admin)
+router.get('/orders', [auth, adminAuth], async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      search, 
+      dateFrom, 
+      dateTo, 
+      paymentMethod,
+      minAmount,
+      maxAmount
+    } = req.query;
+    
+    let query = {};
+    
+    // Status filter
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+    
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        query.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        query.createdAt.$lte = new Date(dateTo);
+      }
+    }
+    
+    // Payment method filter
+    if (paymentMethod && paymentMethod !== 'all') {
+      query.paymentMethod = paymentMethod;
+    }
+    
+    // Amount range filter
+    if (minAmount || maxAmount) {
+      query.totalPrice = {};
+      if (minAmount) {
+        query.totalPrice.$gte = parseFloat(minAmount);
+      }
+      if (maxAmount) {
+        query.totalPrice.$lte = parseFloat(maxAmount);
+      }
+    }
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { _id: { $regex: search, $options: 'i' } },
+        { 'user.name': { $regex: search, $options: 'i' } },
+        { 'user.email': { $regex: search, $options: 'i' } },
+        { trackingNumber: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const orders = await Order.find(query)
+      .populate('user', 'name email')
+      .populate('statusHistory.changedBy', 'name')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await Order.countDocuments(query);
+
+    // Calculate statistics
+    const stats = await Order.aggregate([
+      { $group: { 
+        _id: null, 
+        totalOrders: { $sum: 1 },
+        totalRevenue: { $sum: '$totalPrice' },
+        avgOrderValue: { $avg: '$totalPrice' }
+      }}
+    ]);
+
+    const statusStats = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } }}
+    ]);
+
+    res.json({
+      orders,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      total,
+      stats: stats[0] || { totalOrders: 0, totalRevenue: 0, avgOrderValue: 0 },
+      statusStats
+    });
+  } catch (error) {
+    console.error('Get orders error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /api/admin/orders/:orderId
+// @desc    Get single order details
+// @access  Private (Admin)
+router.get('/orders/:orderId', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    const order = await Order.findById(orderId)
+      .populate('user', 'name email')
+      .populate('orderItems.product', 'name imageUrls')
+      .populate('statusHistory.changedBy', 'name email');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error('Get order details error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/orders/:orderId
+// @desc    Update order details
+// @access  Private (Admin)
+router.put('/orders/:orderId', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { 
+      status, 
+      orderNotes, 
+      trackingNumber, 
+      shippingCompany,
+      isPaid,
+      isDelivered
+    } = req.body;
+    
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const updateData = {};
+    
+    // Update status with history
+    if (status && status !== order.status) {
+      updateData.status = status;
+      updateData.statusHistory = [
+        ...(order.statusHistory || []),
+        {
+          status: status,
+          changedBy: req.user._id,
+          changedAt: new Date(),
+          note: req.body.statusNote || ''
+        }
+      ];
+      
+      // Auto-update delivery status
+      if (status === 'Completed') {
+        updateData.isDelivered = true;
+        updateData.deliveredAt = new Date();
+      }
+    }
+    
+    // Update other fields
+    if (orderNotes !== undefined) updateData.orderNotes = orderNotes;
+    if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
+    if (shippingCompany !== undefined) updateData.shippingCompany = shippingCompany;
+    if (isPaid !== undefined) {
+      updateData.isPaid = isPaid;
+      if (isPaid) updateData.paidAt = new Date();
+    }
+    if (isDelivered !== undefined) {
+      updateData.isDelivered = isDelivered;
+      if (isDelivered) updateData.deliveredAt = new Date();
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId, 
+      updateData, 
+      { new: true, runValidators: true }
+    )
+    .populate('user', 'name email')
+    .populate('statusHistory.changedBy', 'name email');
+
+    res.json({
+      message: 'Order updated successfully',
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error('Update order error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/orders/:orderId/notify
+// @desc    Send notification to customer
+// @access  Private (Admin)
+router.post('/orders/:orderId/notify', [auth, adminAuth], async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { message, type = 'status_update' } = req.body;
+    
+    const order = await Order.findById(orderId).populate('user', 'name email');
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Send email notification
+    const { sendBulkEmail } = require('../utils/sendEmail');
+    
+    let subject = 'Sipariş Güncellemesi';
+    let emailMessage = message || `Siparişiniz (${order._id}) güncellenmiştir.`;
+    
+    if (type === 'status_update') {
+      subject = `Sipariş Durumu Güncellendi - ${order.status}`;
+      emailMessage = `
+        <h2>Sipariş Durumu Güncellendi</h2>
+        <p>Merhaba ${order.user.name},</p>
+        <p>Siparişiniz (${order._id}) durumu "${order.status}" olarak güncellenmiştir.</p>
+        ${order.trackingNumber ? `<p><strong>Kargo Takip No:</strong> ${order.trackingNumber}</p>` : ''}
+        <p>Detaylar için hesabınıza giriş yapabilirsiniz.</p>
+        <p>İyi günler,<br>Yönetici</p>
+      `;
+    }
+
+    await sendBulkEmail([{
+      name: order.user.name,
+      email: order.user.email
+    }], subject, emailMessage);
+
+    res.json({
+      message: 'Notification sent successfully'
+    });
+  } catch (error) {
+    console.error('Send notification error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -60,6 +60,37 @@ const orderSchema = new mongoose.Schema({
     },
     default: 'Pending'
   },
+  statusHistory: [{
+    status: {
+      type: String,
+      required: true
+    },
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    note: {
+      type: String,
+      maxlength: [500, 'Note cannot exceed 500 characters']
+    }
+  }],
+  orderNotes: {
+    type: String,
+    maxlength: [1000, 'Order notes cannot exceed 1000 characters'],
+    default: ''
+  },
+  trackingNumber: {
+    type: String,
+    default: ''
+  },
+  shippingCompany: {
+    type: String,
+    default: ''
+  },
   paymentMethod: {
     type: String,
     required: true,
