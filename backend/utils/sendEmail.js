@@ -41,7 +41,7 @@ const initializeSendGrid = () => {
   }
 };
 
-// Create transporter with Gmail SMTP, SendGrid fallback, or mock mode
+// Create transporter with Gmail SMTP or mock mode
 const createTransporter = async () => {
   try {
     // Try Gmail SMTP first
@@ -57,42 +57,6 @@ const createTransporter = async () => {
           pass: process.env.EMAIL_PASS,
         },
       });
-    }
-
-    // Try SendGrid as fallback
-    const isSendGridReady = initializeSendGrid();
-    if (isSendGridReady) {
-      console.log('Using SendGrid API');
-      return {
-        sendMail: async (mailOptions) => {
-          try {
-            if (!sgMail) {
-              throw new Error('SendGrid not available');
-            }
-
-            const msg = {
-              to: mailOptions.to,
-              from: {
-                email: 'technorecep_1@gmail.com',
-                name: 'Wyandotte Tavuk Çiftliği'
-              },
-              subject: mailOptions.subject,
-              html: mailOptions.html,
-            };
-
-            const response = await sgMail.send(msg);
-            console.log('✅ SendGrid email sent successfully:', response[0].statusCode);
-            
-            return {
-              messageId: response[0].headers['x-message-id'] || `sg-${Date.now()}`,
-              response: `SendGrid: ${response[0].statusCode}`
-            };
-          } catch (error) {
-            console.error('❌ SendGrid error:', error.message);
-            throw error;
-          }
-        }
-      };
     }
     
     // Fallback to mock mode
