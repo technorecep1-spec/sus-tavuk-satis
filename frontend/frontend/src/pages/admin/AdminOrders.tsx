@@ -451,7 +451,7 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Payment Method Filter */}
           <div>
             <select
@@ -506,17 +506,17 @@ const AdminOrders: React.FC = () => {
               CSV İndir
             </button>
           </div>
+        </div>
 
-          {/* Clear Filters */}
-          <div>
-            <button
-              onClick={clearFilters}
-              className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filtreleri Temizle
-            </button>
-          </div>
+        {/* Clear Filters Button - Separate Row */}
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={clearFilters}
+            className="flex items-center justify-center px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filtreleri Temizle
+          </button>
         </div>
       </div>
 
