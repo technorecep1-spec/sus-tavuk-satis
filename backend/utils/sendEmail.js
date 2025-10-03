@@ -52,10 +52,16 @@ const createTransporter = async () => {
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,
         secure: false,
+        connectionTimeout: 60000, // 60 seconds
+        greetingTimeout: 30000,   // 30 seconds
+        socketTimeout: 60000,     // 60 seconds
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
         },
+        tls: {
+          rejectUnauthorized: false
+        }
       });
     }
     
