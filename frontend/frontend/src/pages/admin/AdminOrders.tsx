@@ -96,7 +96,6 @@ const AdminOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
-  const [amountFilter, setAmountFilter] = useState({ min: '', max: '' });
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -115,7 +114,7 @@ const AdminOrders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, statusFilter, dateFilter, paymentFilter, amountFilter, searchTerm]);
+  }, [currentPage, statusFilter, dateFilter, paymentFilter, searchTerm]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -147,8 +146,6 @@ const AdminOrders: React.FC = () => {
         }
       }
       if (paymentFilter !== 'all') params.append('paymentMethod', paymentFilter);
-      if (amountFilter.min) params.append('minAmount', amountFilter.min);
-      if (amountFilter.max) params.append('maxAmount', amountFilter.max);
       if (searchTerm) params.append('search', searchTerm);
 
       const response = await fetch(`${baseUrl}/api/admin/orders?${params}`, {
@@ -322,7 +319,6 @@ const AdminOrders: React.FC = () => {
     setStatusFilter('all');
     setDateFilter('all');
     setPaymentFilter('all');
-    setAmountFilter({ min: '', max: '' });
     setCurrentPage(1);
   };
 
@@ -451,7 +447,7 @@ const AdminOrders: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Payment Method Filter */}
           <div>
             <select
@@ -464,24 +460,6 @@ const AdminOrders: React.FC = () => {
               <option value="Bank Transfer">Havale</option>
               <option value="Credit Card">Kredi Kartı</option>
             </select>
-          </div>
-
-          {/* Amount Range */}
-          <div className="flex gap-2">
-            <input
-              type="number"
-              placeholder="Min Tutar"
-              value={amountFilter.min}
-              onChange={(e) => setAmountFilter({ ...amountFilter, min: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="number"
-              placeholder="Max Tutar"
-              value={amountFilter.max}
-              onChange={(e) => setAmountFilter({ ...amountFilter, max: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
           </div>
 
           {/* Bulk Operations Button */}
