@@ -5,6 +5,8 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ProductAddModal from '../../components/admin/ProductAddModal';
 import ProductEditModal from '../../components/admin/ProductEditModal';
 import ProductDeleteModal from '../../components/admin/ProductDeleteModal';
+import ProductImageGallery from '../../components/admin/ProductImageGallery';
+import ProductBulkOperationsModal from '../../components/admin/ProductBulkOperationsModal';
 import toast from 'react-hot-toast';
 import { 
   Plus, 
@@ -58,6 +60,10 @@ const AdminProducts: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showImageGallery, setShowImageGallery] = useState(false);
+  const [galleryProduct, setGalleryProduct] = useState<Product | null>(null);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const productsPerPage = 12;
 
@@ -234,6 +240,130 @@ const AdminProducts: React.FC = () => {
   const handleCloseDeleteModal = () => {
     setShowDeleteModal(false);
     setDeletingProduct(null);
+  };
+
+  const handleViewImages = (product: Product) => {
+    setGalleryProduct(product);
+    setShowImageGallery(true);
+  };
+
+  const handleImagesUpdate = (updatedImages: string[]) => {
+    if (galleryProduct) {
+      const updatedProduct = { ...galleryProduct, imageUrls: updatedImages };
+      setProducts(prev => prev.map(p => p._id === updatedProduct._id ? updatedProduct : p));
+      setGalleryProduct(updatedProduct);
+    }
+  };
+
+  const handleCloseImageGallery = () => {
+    setShowImageGallery(false);
+    setGalleryProduct(null);
+  };
+
+  const handleBulkOperations = () => {
+    if (selectedProducts.length === 0) {
+      toast.error('Lütfen en az bir ürün seçin');
+      return;
+    }
+    setShowBulkModal(true);
+  };
+
+  const handleBulkUpdate = async (action: string, data: any) => {
+    setBulkLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      
+      const response = await fetch(`${baseUrl}/api/products/bulk-update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productIds: selectedProducts,
+          action,
+          data
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`${selectedProducts.length} ürün güncellendi`);
+        fetchProducts(); // Refresh the list
+        setSelectedProducts([]);
+        setSelectAll(false);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Toplu güncelleme başarısız');
+      }
+    } catch (error) {
+      console.error('Bulk update error:', error);
+      toast.error('Toplu güncelleme sırasında hata oluştu');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      
+      const response = await fetch(`${baseUrl}/api/products/bulk-delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productIds: selectedProducts
+        })
+      });
+
+      if (response.ok) {
+        toast.success(`${selectedProducts.length} ürün silindi`);
+        setProducts(prev => prev.filter(p => !selectedProducts.includes(p._id)));
+        setSelectedProducts([]);
+        setSelectAll(false);
+      } else {
+        const error = await response.json();
+        toast.error(error.message || 'Toplu silme başarısız');
+      }
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      toast.error('Toplu silme sırasında hata oluştu');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkExport = () => {
+    const selectedProductsData = products.filter(p => selectedProducts.includes(p._id));
+    const csvContent = [
+      ['Ürün Adı', 'Açıklama', 'Fiyat', 'Kategori', 'Stok', 'Durum', 'Oluşturma Tarihi'],
+      ...selectedProductsData.map(product => [
+        product.name,
+        product.description,
+        product.price.toString(),
+        product.category,
+        product.stock.toString(),
+        product.isActive ? 'Aktif' : 'Pasif',
+        new Date(product.createdAt).toLocaleDateString('tr-TR')
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `urunler_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('CSV dosyası indirildi');
   };
 
   if (!user?.isAdmin) {
@@ -421,7 +551,7 @@ const AdminProducts: React.FC = () => {
 
               {selectedProducts.length > 0 && (
                 <button
-                  onClick={() => {/* TODO: Bulk operations */}}
+                  onClick={handleBulkOperations}
                   className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                 >
                   <Settings className="w-4 h-4 mr-2" />
@@ -509,7 +639,11 @@ const AdminProducts: React.FC = () => {
                           </span>
                           
                           <div className="flex space-x-2">
-                            <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                            <button 
+                              onClick={() => handleViewImages(product)}
+                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                              title="Resimleri Görüntüle"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button 
@@ -571,7 +705,11 @@ const AdminProducts: React.FC = () => {
                             Stok: {product.stock} - {getStockStatus(product.stock).text}
                           </span>
                           <div className="flex space-x-2">
-                            <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                            <button 
+                              onClick={() => handleViewImages(product)}
+                              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                              title="Resimleri Görüntüle"
+                            >
                               <Eye className="w-4 h-4" />
                             </button>
                             <button 
@@ -665,6 +803,25 @@ const AdminProducts: React.FC = () => {
           onConfirm={confirmDeleteProduct}
           product={deletingProduct}
           loading={deleting}
+        />
+
+        {/* Product Image Gallery */}
+        <ProductImageGallery
+          isOpen={showImageGallery}
+          onClose={handleCloseImageGallery}
+          images={galleryProduct?.imageUrls || []}
+          onImagesUpdate={handleImagesUpdate}
+          productName={galleryProduct?.name || ''}
+        />
+
+        {/* Bulk Operations Modal */}
+        <ProductBulkOperationsModal
+          isOpen={showBulkModal}
+          onClose={() => setShowBulkModal(false)}
+          selectedProducts={products.filter(p => selectedProducts.includes(p._id))}
+          onBulkUpdate={handleBulkUpdate}
+          onBulkDelete={handleBulkDelete}
+          onBulkExport={handleBulkExport}
         />
       </div>
     </div>
