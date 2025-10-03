@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import UserEditModal from '../../components/admin/UserEditModal';
+import UserDetailModal from '../../components/admin/UserDetailModal';
 import toast from 'react-hot-toast';
-import { Users, Trash2, Shield, Calendar, Mail, Search, Filter } from 'lucide-react';
+import { Users, Trash2, Shield, Calendar, Mail, Search, Filter, Edit, Eye, Download } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -11,6 +13,9 @@ interface User {
   email: string;
   createdAt: string;
   isAdmin?: boolean;
+  status?: 'active' | 'inactive' | 'suspended';
+  adminNotes?: string;
+  lastLogin?: string;
 }
 
 const AdminUsers: React.FC = () => {
@@ -22,6 +27,12 @@ const AdminUsers: React.FC = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'admin' | 'user'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -29,7 +40,7 @@ const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, filterType]);
+  }, [users, searchTerm, filterType, statusFilter, dateFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -77,7 +88,8 @@ const AdminUsers: React.FC = () => {
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.adminNotes && user.adminNotes.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -86,6 +98,31 @@ const AdminUsers: React.FC = () => {
       filtered = filtered.filter(user => user.email === process.env.REACT_APP_ADMIN_EMAIL);
     } else if (filterType === 'user') {
       filtered = filtered.filter(user => user.email !== process.env.REACT_APP_ADMIN_EMAIL);
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => user.status === statusFilter);
+    }
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      filtered = filtered.filter(user => {
+        const userDate = new Date(user.createdAt);
+        switch (dateFilter) {
+          case 'today':
+            return userDate.toDateString() === now.toDateString();
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return userDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return userDate >= monthAgo;
+          default:
+            return true;
+        }
+      });
     }
 
     setFilteredUsers(filtered);
@@ -126,6 +163,81 @@ const AdminUsers: React.FC = () => {
 
   const isUserAdmin = (userEmail: string) => {
     return userEmail === process.env.REACT_APP_ADMIN_EMAIL;
+  };
+
+  const handleEditUser = (userToEdit: User) => {
+    setEditingUser(userToEdit);
+    setShowEditModal(true);
+  };
+
+  const handleUserUpdated = (updatedUser: User) => {
+    setUsers(users.map(u => u._id === updatedUser._id ? updatedUser : u));
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingUser(null);
+  };
+
+  const handleViewUser = (userToView: User) => {
+    setViewingUser(userToView);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setViewingUser(null);
+  };
+
+  const handleExportCSV = () => {
+    const csvContent = [
+      ['Ad Soyad', 'E-posta', 'Durum', 'Kayıt Tarihi', 'Admin Notları'],
+      ...filteredUsers.map(user => [
+        user.name,
+        user.email,
+        user.status === 'active' ? 'Aktif' : user.status === 'inactive' ? 'Pasif' : 'Askıya Alınmış',
+        new Date(user.createdAt).toLocaleDateString('tr-TR'),
+        user.adminNotes || ''
+      ])
+    ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `kullanicilar_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('CSV dosyası indirildi');
+  };
+
+  const getStatusBadge = (userStatus: string) => {
+    switch (userStatus) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'suspended':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (userStatus: string) => {
+    switch (userStatus) {
+      case 'active':
+        return 'Aktif';
+      case 'inactive':
+        return 'Pasif';
+      case 'suspended':
+        return 'Askıya Alınmış';
+      default:
+        return 'Bilinmiyor';
+    }
   };
 
   if (!user?.isAdmin) {
@@ -202,14 +314,14 @@ const AdminUsers: React.FC = () => {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {/* Search */}
-          <div className="flex-1">
+          <div className="lg:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Kullanıcı adı veya e-posta ile ara..."
+                placeholder="Kullanıcı adı, e-posta veya notlarla ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -217,18 +329,74 @@ const AdminUsers: React.FC = () => {
             </div>
           </div>
 
-          {/* Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-gray-400" />
+          {/* Role Filter */}
+          <div>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | 'admin' | 'user')}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">Tüm Kullanıcılar</option>
+              <option value="all">Tüm Roller</option>
               <option value="admin">Sadece Adminler</option>
               <option value="user">Sadece Kullanıcılar</option>
             </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Tüm Durumlar</option>
+              <option value="active">Aktif</option>
+              <option value="inactive">Pasif</option>
+              <option value="suspended">Askıya Alınmış</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Date Filter */}
+          <div>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value as any)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Tüm Zamanlar</option>
+              <option value="today">Bugün</option>
+              <option value="week">Son 7 Gün</option>
+              <option value="month">Son 30 Gün</option>
+            </select>
+          </div>
+
+          {/* Export Button */}
+          <div>
+            <button
+              onClick={handleExportCSV}
+              className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              CSV İndir
+            </button>
+          </div>
+
+          {/* Clear Filters */}
+          <div>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterType('all');
+                setStatusFilter('all');
+                setDateFilter('all');
+              }}
+              className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filtreleri Temizle
+            </button>
           </div>
         </div>
       </div>
@@ -253,6 +421,9 @@ const AdminUsers: React.FC = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rol
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Durum
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kayıt Tarihi
@@ -299,6 +470,11 @@ const AdminUsers: React.FC = () => {
                       </span>
                     )}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(userItem.status || 'active')}`}>
+                      {getStatusText(userItem.status || 'active')}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(userItem.createdAt).toLocaleDateString('tr-TR', {
                       year: 'numeric',
@@ -307,23 +483,46 @@ const AdminUsers: React.FC = () => {
                     })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleDeleteUser(userItem._id, userItem.name)}
-                      disabled={deleting === userItem._id || userItem._id === user?.id || isUserAdmin(userItem.email)}
-                      className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                      title={
-                        userItem._id === user?.id ? "Kendi hesabınızı silemezsiniz" :
-                        isUserAdmin(userItem.email) ? "Admin kullanıcıları silinemez" :
-                        "Kullanıcıyı sil"
-                      }
-                    >
-                      {deleting === userItem._id ? (
-                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      ) : (
-                        <Trash2 className="w-4 h-4 mr-2" />
-                      )}
-                      Sil
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleViewUser(userItem)}
+                        className="text-green-600 hover:text-green-900 flex items-center"
+                        title="Kullanıcı detaylarını görüntüle"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Görüntüle
+                      </button>
+                      <button
+                        onClick={() => handleEditUser(userItem)}
+                        disabled={userItem._id === user?.id || isUserAdmin(userItem.email)}
+                        className="text-blue-600 hover:text-blue-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        title={
+                          userItem._id === user?.id ? "Kendi hesabınızı düzenleyemezsiniz" :
+                          isUserAdmin(userItem.email) ? "Admin kullanıcıları düzenlenemez" :
+                          "Kullanıcıyı düzenle"
+                        }
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(userItem._id, userItem.name)}
+                        disabled={deleting === userItem._id || userItem._id === user?.id || isUserAdmin(userItem.email)}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        title={
+                          userItem._id === user?.id ? "Kendi hesabınızı silemezsiniz" :
+                          isUserAdmin(userItem.email) ? "Admin kullanıcıları silinemez" :
+                          "Kullanıcıyı sil"
+                        }
+                      >
+                        {deleting === userItem._id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-1"></div>
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-1" />
+                        )}
+                        Sil
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -344,6 +543,22 @@ const AdminUsers: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      <UserEditModal
+        user={editingUser}
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        onUserUpdated={handleUserUpdated}
+      />
+
+      {/* Detail Modal */}
+      <UserDetailModal
+        user={viewingUser}
+        isOpen={showDetailModal}
+        onClose={handleCloseDetailModal}
+        onEditUser={handleEditUser}
+      />
     </div>
   );
 };

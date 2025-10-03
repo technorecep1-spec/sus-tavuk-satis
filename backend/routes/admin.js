@@ -203,4 +203,137 @@ router.get('/gallery', [auth, adminAuth], async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/users/:userId
+// @desc    Get single user details
+// @access  Private (Admin)
+router.get('/users/:userId', [auth, adminAuth], async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get user's orders
+    const orders = await Order.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('items.product', 'name price');
+
+    res.json({
+      user,
+      recentOrders: orders
+    });
+  } catch (error) {
+    console.error('Get user details error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/admin/users/:userId
+// @desc    Update user details
+// @access  Private (Admin)
+router.put('/users/:userId', [auth, adminAuth], async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { name, email, status, adminNotes } = req.body;
+    
+    // Prevent admin from editing themselves
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot edit your own account' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent editing other admins
+    if (user.checkAdminStatus()) {
+      return res.status(400).json({ message: 'Cannot edit admin users' });
+    }
+
+    // Check if email is already taken by another user
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { 
+        name: name || user.name,
+        email: email || user.email,
+        status: status || user.status,
+        adminNotes: adminNotes !== undefined ? adminNotes : user.adminNotes
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    res.json({
+      message: 'User updated successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/users/:userId/reset-password
+// @desc    Reset user password
+// @access  Private (Admin)
+router.post('/users/:userId/reset-password', [auth, adminAuth], async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+    
+    // Prevent admin from resetting their own password
+    if (userId === req.user._id.toString()) {
+      return res.status(400).json({ message: 'You cannot reset your own password' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Prevent resetting admin passwords
+    if (user.checkAdminStatus()) {
+      return res.status(400).json({ message: 'Cannot reset admin passwords' });
+    }
+
+    // Generate new password if not provided
+    const password = newPassword || Math.random().toString(36).slice(-8);
+    
+    user.password = password;
+    await user.save();
+
+    // Send email with new password
+    const { sendBulkEmail } = require('../utils/sendEmail');
+    await sendBulkEmail([{
+      name: user.name,
+      email: user.email
+    }], 'Şifre Sıfırlama', `
+      <h2>Şifreniz Sıfırlandı</h2>
+      <p>Merhaba ${user.name},</p>
+      <p>Hesabınızın şifresi yönetici tarafından sıfırlanmıştır.</p>
+      <p><strong>Yeni Şifreniz:</strong> ${password}</p>
+      <p>Güvenliğiniz için lütfen giriş yaptıktan sonra şifrenizi değiştirin.</p>
+      <p>İyi günler,<br>Yönetici</p>
+    `);
+
+    res.json({
+      message: 'Password reset successfully',
+      newPassword: password
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

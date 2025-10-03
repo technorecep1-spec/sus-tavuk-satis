@@ -24,6 +24,20 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
+  },
+  adminNotes: {
+    type: String,
+    maxlength: [500, 'Admin notes cannot exceed 500 characters'],
+    default: ''
+  },
+  lastLogin: {
+    type: Date,
+    default: null
+  },
   // Email verification removed - using simple registration + admin bulk email system
   createdAt: {
     type: Date,
