@@ -11,76 +11,53 @@ const initializeGmailSMTP = () => {
   }
 };
 
-// Initialize SendGrid (fallback)
-let sgMail;
-try {
-  sgMail = require('@sendgrid/mail');
-} catch (error) {
-  console.log('⚠️ SendGrid package not found');
-  sgMail = null;
-}
-
-const initializeSendGrid = () => {
-  if (!sgMail) {
-    console.log('❌ SendGrid package not available');
-    return false;
-  }
-  
-  if (process.env.SENDGRID_API_KEY) {
-    try {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-      console.log('✅ SendGrid initialized successfully');
-      return true;
-    } catch (error) {
-      console.log('❌ SendGrid API key error:', error.message);
-      return false;
-    }
-  } else {
-    console.log('❌ SENDGRID_API_KEY not found');
-    return false;
-  }
-};
-
-// Create transporter with Gmail SMTP or mock mode
+// Create transporter with Gmail SMTP or fallback to mock mode
 const createTransporter = async () => {
   try {
     // Try Gmail SMTP first
     const isGmailReady = initializeGmailSMTP();
     if (isGmailReady) {
-      console.log('Using Gmail SMTP');
+      console.log('📧 Using Gmail SMTP for real email sending');
       return nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: process.env.EMAIL_PORT,
-        secure: false,
+        secure: false, // true for 465, false for other ports
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 15000,   // 15 seconds
+        socketTimeout: 30000,     // 30 seconds
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
         },
+        tls: {
+          rejectUnauthorized: false
+        }
       });
     }
     
     // Fallback to mock mode
-    console.log('Using mock email mode - no email service configured');
+    console.log('📧 Using mock email mode - Gmail SMTP not configured');
     
     return {
       sendMail: async (mailOptions) => {
-        console.log('📧 MOCK EMAIL SENT:');
+        console.log('📧 MOCK EMAIL SENT (Fallback Mode):');
         console.log('  To:', mailOptions.to);
         console.log('  Subject:', mailOptions.subject);
         console.log('  From:', mailOptions.from);
         console.log('  Content preview:', mailOptions.html ? mailOptions.html.substring(0, 100) + '...' : 'No content');
+        console.log('  ⚠️  This is a mock email - no real email was sent');
         
         // Simulate email sending delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         return {
           messageId: `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          response: 'Mock email sent successfully'
+          response: 'Mock email sent successfully (Gmail SMTP not configured)'
         };
       }
     };
   } catch (error) {
-    console.error('Error creating transporter:', error);
+    console.error('❌ Error creating email transporter:', error);
     throw error;
   }
 };
