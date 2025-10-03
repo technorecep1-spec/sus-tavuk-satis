@@ -85,7 +85,9 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
   const resetOrder = () => {
     // Reset to original order (this would need to be implemented based on your needs)
-    toast.info('Resim sırası sıfırlandı');
+    toast('Resim sırası sıfırlandı', {
+      icon: 'ℹ️',
+    });
   };
 
   return (
