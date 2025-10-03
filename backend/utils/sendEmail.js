@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const https = require('https');
+const querystring = require('querystring');
 
 // Initialize email providers
 const initializeEmailProviders = () => {
@@ -12,60 +14,124 @@ const initializeEmailProviders = () => {
     console.log(`📧 Email User: ${process.env.EMAIL_USER}`);
     console.log(`📧 Email Pass: ${process.env.EMAIL_PASS ? '***configured***' : 'NOT SET'}`);
     
-    providers.push({
-      name: 'Gmail SMTP',
-      config: {
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT || 587,
-        secure: false,
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-          ciphers: 'SSLv3',
-          secureProtocol: 'TLSv1_2_method'
-        },
-        pool: true,
-        maxConnections: 3,
-        maxMessages: 50,
-        rateDelta: 30000,
-        rateLimit: 3,
-        requireTLS: true,
-        debug: process.env.NODE_ENV === 'development',
-        logger: process.env.NODE_ENV === 'development'
+    // Try multiple Gmail configurations
+    const gmailConfigs = [
+      {
+        name: 'Gmail SMTP (Port 587)',
+        config: {
+          host: process.env.EMAIL_HOST,
+          port: 587,
+          secure: false,
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false,
+            ciphers: 'SSLv3'
+          },
+          requireTLS: true
+        }
+      },
+      {
+        name: 'Gmail SMTP (Port 465)',
+        config: {
+          host: process.env.EMAIL_HOST,
+          port: 465,
+          secure: true,
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        }
+      },
+      {
+        name: 'Gmail SMTP (Port 25)',
+        config: {
+          host: process.env.EMAIL_HOST,
+          port: 25,
+          secure: false,
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        }
       }
-    });
+    ];
+    
+    providers.push(...gmailConfigs);
   }
   
   // Check SendGrid (alternative)
   if (process.env.SENDGRID_API_KEY) {
     console.log('✅ SendGrid configuration found as backup');
+    const sendGridConfigs = [
+      {
+        name: 'SendGrid (Port 587)',
+        config: {
+          host: 'smtp.sendgrid.net',
+          port: 587,
+          secure: false,
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          auth: {
+            user: 'apikey',
+            pass: process.env.SENDGRID_API_KEY,
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        }
+      },
+      {
+        name: 'SendGrid (Port 465)',
+        config: {
+          host: 'smtp.sendgrid.net',
+          port: 465,
+          secure: true,
+          connectionTimeout: 30000,
+          greetingTimeout: 15000,
+          socketTimeout: 30000,
+          auth: {
+            user: 'apikey',
+            pass: process.env.SENDGRID_API_KEY,
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        }
+      }
+    ];
+    
+    providers.push(...sendGridConfigs);
+  }
+  
+  // Check Mailgun (HTTP API - no SMTP)
+  if (process.env.MAILGUN_API_KEY && process.env.MAILGUN_DOMAIN) {
+    console.log('✅ Mailgun API configuration found as HTTP alternative');
     providers.push({
-      name: 'SendGrid',
+      name: 'Mailgun API',
       config: {
-        host: 'smtp.sendgrid.net',
-        port: 587,
-        secure: false,
-        connectionTimeout: 60000,
-        greetingTimeout: 30000,
-        socketTimeout: 60000,
-        auth: {
-          user: 'apikey',
-          pass: process.env.SENDGRID_API_KEY,
-        },
-        tls: {
-          rejectUnauthorized: false
-        },
-        pool: true,
-        maxConnections: 2,
-        maxMessages: 25,
-        rateDelta: 30000,
-        rateLimit: 2
+        type: 'http',
+        apiKey: process.env.MAILGUN_API_KEY,
+        domain: process.env.MAILGUN_DOMAIN,
+        baseUrl: 'https://api.mailgun.net/v3'
       }
     });
   }
@@ -76,6 +142,7 @@ const initializeEmailProviders = () => {
     console.log(`📧 EMAIL_USER: ${process.env.EMAIL_USER ? 'SET' : 'NOT SET'}`);
     console.log(`📧 EMAIL_PASS: ${process.env.EMAIL_PASS ? 'SET' : 'NOT SET'}`);
     console.log(`📧 SENDGRID_API_KEY: ${process.env.SENDGRID_API_KEY ? 'SET' : 'NOT SET'}`);
+    console.log(`📧 MAILGUN_API_KEY: ${process.env.MAILGUN_API_KEY ? 'SET' : 'NOT SET'}`);
   }
   
   return providers;
@@ -97,16 +164,39 @@ const createTransporter = async () => {
       console.log(`📧 Trying ${provider.name} (${i + 1}/${providers.length})`);
       
       try {
-        const transporter = nodemailer.createTransport(provider.config);
-        
-        // Test the connection
-        console.log(`🔍 Testing ${provider.name} connection...`);
-        await transporter.verify();
-        console.log(`✅ ${provider.name} connection verified successfully`);
-        
-        // Add provider info to transporter for logging
-        transporter.providerName = provider.name;
-        return transporter;
+        // Handle HTTP API providers differently
+        if (provider.config.type === 'http') {
+          console.log(`🔍 Testing ${provider.name} API connection...`);
+          // For HTTP APIs, we'll test by creating a simple transporter
+          const transporter = {
+            providerName: provider.name,
+            config: provider.config,
+            sendMail: async (mailOptions) => {
+              if (provider.name === 'Mailgun API') {
+                return await sendMailgunEmail(mailOptions, provider.config);
+              }
+              throw new Error('Unknown HTTP API provider');
+            }
+          };
+          console.log(`✅ ${provider.name} API ready`);
+          return transporter;
+        } else {
+          const transporter = nodemailer.createTransport(provider.config);
+          
+          // Test the connection with shorter timeout
+          console.log(`🔍 Testing ${provider.name} connection...`);
+          await Promise.race([
+            transporter.verify(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Connection test timeout')), 10000) // 10 seconds max
+            )
+          ]);
+          console.log(`✅ ${provider.name} connection verified successfully`);
+          
+          // Add provider info to transporter for logging
+          transporter.providerName = provider.name;
+          return transporter;
+        }
         
       } catch (verifyError) {
         console.log(`❌ ${provider.name} connection verification failed:`, verifyError.message);
@@ -137,6 +227,55 @@ const createTransporter = async () => {
     console.error('❌ Error creating email transporter:', error);
     return createMockTransporter();
   }
+};
+
+// Send email via Mailgun HTTP API
+const sendMailgunEmail = async (mailOptions, config) => {
+  return new Promise((resolve, reject) => {
+    const postData = querystring.stringify({
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      html: mailOptions.html
+    });
+
+    const options = {
+      hostname: 'api.mailgun.net',
+      port: 443,
+      path: `/v3/${config.domain}/messages`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`api:${config.apiKey}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          const response = JSON.parse(data);
+          resolve({
+            messageId: response.id,
+            response: 'Mailgun email sent successfully'
+          });
+        } else {
+          reject(new Error(`Mailgun API error: ${res.statusCode} - ${data}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(error);
+    });
+
+    req.write(postData);
+    req.end();
+  });
 };
 
 // Create mock transporter for fallback
