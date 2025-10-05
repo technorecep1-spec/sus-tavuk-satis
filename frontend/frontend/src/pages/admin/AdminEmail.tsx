@@ -4,12 +4,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Mail, Send, Users, TestTube, Trash2, ArrowLeft } from 'lucide-react';
+import { Mail, Send, Users, TestTube, Trash2, ArrowLeft, MessageSquare } from 'lucide-react';
 
 interface User {
   _id: string;
   name: string;
   email: string;
+  phone?: string;
   createdAt: string;
 }
 
@@ -27,6 +28,12 @@ const AdminEmail: React.FC = () => {
     subject: '',
     message: ''
   });
+  
+  const [smsData, setSmsData] = useState({
+    message: ''
+  });
+  
+  const [activeTab, setActiveTab] = useState<'email' | 'sms'>('email');
 
   useEffect(() => {
     fetchUsers();
@@ -133,6 +140,57 @@ const AdminEmail: React.FC = () => {
     }
   };
 
+  const handleSendSms = async () => {
+    if (!smsData.message.trim()) {
+      toast.error('SMS mesajı zorunludur');
+      return;
+    }
+
+    if (selectedUsers.length === 0) {
+      toast.error('En az bir alıcı seçmelisiniz');
+      return;
+    }
+
+    setSending(true);
+    try {
+      const token = localStorage.getItem('token');
+      const payload = { 
+        message: smsData.message,
+        recipients: selectAll ? ['all'] : selectedUsers
+      };
+
+      const baseUrl = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/email/send-bulk-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message);
+        // Reset form after successful bulk send
+        setSmsData({ message: '' });
+        setSelectedUsers([]);
+        setSelectAll(false);
+      } else if (response.status === 401) {
+        toast.error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        window.location.href = '/login';
+      } else {
+        toast.error(data.message || 'SMS gönderilemedi');
+      }
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      toast.error('SMS gönderilirken hata oluştu');
+    } finally {
+      setSending(false);
+    }
+  };
+
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!window.confirm(`"${userName}" kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.`)) {
       return;
@@ -195,67 +253,144 @@ const AdminEmail: React.FC = () => {
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          📧 Toplu E-posta Gönderimi
+          📧📱 Toplu Sms/E-posta Gönderimi
         </h1>
         <p className="text-gray-600">
-          Müşterilerinize toplu e-posta gönderin, duyurular yapın ve iletişimde kalın.
+          Müşterilerinize toplu e-posta ve SMS gönderin, duyurular yapın ve iletişimde kalın.
         </p>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'email'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Mail className="w-4 h-4 inline mr-2" />
+              E-posta
+            </button>
+            <button
+              onClick={() => setActiveTab('sms')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'sms'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 inline mr-2" />
+              SMS
+            </button>
+          </nav>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Email Composition */}
+        {/* Email/SMS Composition */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <Mail className="w-5 h-5 mr-2" />
-            E-posta Oluştur
+            {activeTab === 'email' ? (
+              <>
+                <Mail className="w-5 h-5 mr-2" />
+                E-posta Oluştur
+              </>
+            ) : (
+              <>
+                <MessageSquare className="w-5 h-5 mr-2" />
+                SMS Oluştur
+              </>
+            )}
           </h2>
           
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Konu
-              </label>
-              <input
-                type="text"
-                value={emailData.subject}
-                onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="E-posta konusu..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mesaj
-              </label>
-              <textarea
-                value={emailData.message}
-                onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
-                rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="E-posta mesajınızı buraya yazın..."
-              />
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => handleSendEmail(true)}
-                disabled={sending}
-                className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center"
-              >
-                <TestTube className="w-4 h-4 mr-2" />
-                {sending ? 'Gönderiliyor...' : 'Test Gönder'}
-              </button>
-              
-              <button
-                onClick={() => handleSendEmail(false)}
-                disabled={sending || selectedUsers.length === 0}
-                className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {sending ? 'Gönderiliyor...' : 'Toplu Gönder'}
-              </button>
-            </div>
+            {activeTab === 'email' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Konu
+                  </label>
+                  <input
+                    type="text"
+                    value={emailData.subject}
+                    onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="E-posta konusu..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mesaj
+                  </label>
+                  <textarea
+                    value={emailData.message}
+                    onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                    rows={8}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="E-posta mesajınızı buraya yazın..."
+                  />
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => handleSendEmail(true)}
+                    disabled={sending}
+                    className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 disabled:opacity-50 flex items-center justify-center"
+                  >
+                    <TestTube className="w-4 h-4 mr-2" />
+                    {sending ? 'Gönderiliyor...' : 'Test Gönder'}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleSendEmail(false)}
+                    disabled={sending || selectedUsers.length === 0}
+                    className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {sending ? 'Gönderiliyor...' : 'Toplu Gönder'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SMS Mesajı
+                  </label>
+                  <textarea
+                    value={smsData.message}
+                    onChange={(e) => setSmsData({ ...smsData, message: e.target.value })}
+                    rows={6}
+                    maxLength={160}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="SMS mesajınızı buraya yazın... (Maksimum 160 karakter)"
+                  />
+                  <div className="text-right text-sm text-gray-500 mt-1">
+                    {smsData.message.length}/160 karakter
+                  </div>
+                </div>
+                
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Not:</strong> SMS sadece telefon numarası kayıtlı olan kullanıcılara gönderilir.
+                  </p>
+                </div>
+                
+                <button
+                  onClick={handleSendSms}
+                  disabled={sending || selectedUsers.length === 0}
+                  className="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 flex items-center justify-center"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  {sending ? 'Gönderiliyor...' : 'SMS Gönder'}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -264,6 +399,11 @@ const AdminEmail: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Users className="w-5 h-5 mr-2" />
             Alıcılar ({users.length} kullanıcı)
+            {activeTab === 'sms' && (
+              <span className="ml-2 text-sm text-gray-500">
+                ({users.filter(u => u.phone).length} telefon numarası)
+              </span>
+            )}
           </h2>
           
           <div className="mb-4">
@@ -293,6 +433,9 @@ const AdminEmail: React.FC = () => {
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{userItem.name}</p>
                   <p className="text-sm text-gray-600">{userItem.email}</p>
+                  {userItem.phone && (
+                    <p className="text-sm text-blue-600">📱 {userItem.phone}</p>
+                  )}
                   <p className="text-xs text-gray-500">
                     Kayıt: {new Date(userItem.createdAt).toLocaleDateString('tr-TR')}
                   </p>

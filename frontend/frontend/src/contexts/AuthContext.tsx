@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   login: (token: string, user: User) => void;
   loginWithCredentials: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -79,9 +79,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, phone?: string) => {
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', { name, email, password, phone });
       // Note: No automatic login after registration, user needs to verify email
       return response.data;
     } catch (error: any) {

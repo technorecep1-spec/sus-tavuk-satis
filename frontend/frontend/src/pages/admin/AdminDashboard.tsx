@@ -220,8 +220,8 @@ const AdminDashboard: React.FC = () => {
               <div className="flex items-center">
                 <Mail className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
-                  <p className="font-semibold text-gray-900">📧 Toplu E-posta</p>
-                  <p className="text-sm text-gray-600">Müşterilere e-posta gönder</p>
+                  <p className="font-semibold text-gray-900">📧📱 Toplu Sms/E-posta</p>
+                  <p className="text-sm text-gray-600">Müşterilere SMS ve e-posta gönder</p>
                 </div>
               </div>
             </Link>

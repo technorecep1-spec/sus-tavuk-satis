@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 interface RegisterFormData {
   name: string;
   email: string;
+  phone?: string;
   password: string;
   confirmPassword: string;
 }
@@ -31,7 +32,7 @@ const Register: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await registerUser(data.name, data.email, data.password);
+      await registerUser(data.name, data.email, data.password, data.phone);
       setUserEmail(data.email);
       setIsRegistered(true);
       toast.success('Kayıt başarılı! Lütfen e-posta kutunuzu kontrol edin.');
@@ -142,6 +143,29 @@ const Register: React.FC = () => {
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                Phone Number (Optional)
+              </label>
+              <input
+                {...register('phone', {
+                  pattern: {
+                    value: /^(\+90|0)?[5][0-9]{9}$/,
+                    message: 'Please enter a valid Turkish phone number'
+                  }
+                })}
+                type="tel"
+                className="input-field mt-1"
+                placeholder="Enter your phone number (e.g., 0532 123 45 67)"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                SMS kampanyaları ve önemli duyurular için kullanılır
+              </p>
             </div>
 
             <div>
