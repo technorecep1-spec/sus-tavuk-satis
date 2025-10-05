@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { sendBulkEmail } = require('../utils/sendEmail');
+const { sendBulkSms } = require('../utils/sendSms');
 
 const router = express.Router();
 
@@ -20,10 +21,10 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-// Get all users for email list
+// Get all users for email/SMS list
 router.get('/users', auth, adminAuth, async (req, res) => {
   try {
-    const users = await User.find({}, 'name email createdAt').sort({ createdAt: -1 });
+    const users = await User.find({}, 'name email phone createdAt').sort({ createdAt: -1 });
     res.json({ users });
   } catch (error) {
     console.error('Get users error:', error);
@@ -96,6 +97,74 @@ router.post('/send-bulk', [
   } catch (error) {
     console.error('Bulk email error:', error);
     res.status(500).json({ message: 'Failed to send emails' });
+  }
+});
+
+// Send bulk SMS to users
+router.post('/send-bulk-sms', [
+  auth,
+  adminAuth,
+  body('message').notEmpty().withMessage('Message is required'),
+  body('recipients').isArray().withMessage('Recipients must be an array')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { message, recipients } = req.body;
+
+    // If recipients is 'all', get all users with phone numbers
+    let smsList = [];
+    if (recipients.includes('all')) {
+      const allUsers = await User.find({ phone: { $exists: true, $ne: null, $ne: '' } }, 'name phone');
+      smsList = allUsers.map(user => ({
+        name: user.name,
+        phone: user.phone
+      }));
+    } else {
+      // Get specific users with phone numbers
+      const selectedUsers = await User.find({
+        _id: { $in: recipients },
+        phone: { $exists: true, $ne: null, $ne: '' }
+      }, 'name phone');
+      smsList = selectedUsers.map(user => ({
+        name: user.name,
+        phone: user.phone
+      }));
+    }
+
+    if (smsList.length === 0) {
+      return res.status(400).json({ message: 'No recipients with phone numbers found' });
+    }
+
+    // Send bulk SMS with timeout
+    console.log(`Admin ${req.user.email} sending bulk SMS to ${smsList.length} recipients`);
+    
+    const result = await Promise.race([
+      sendBulkSms(smsList, message),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Bulk SMS operation timeout')), 120000) // 2 minutes timeout
+      )
+    ]);
+
+    console.log(`Bulk SMS result: ${result.successful} successful, ${result.failed} failed`);
+
+    res.json({
+      message: `SMS sent to ${result.successful} recipients`,
+      successful: result.successful,
+      failed: result.failed,
+      total: smsList.length,
+      details: result.results
+    });
+
+  } catch (error) {
+    console.error('Bulk SMS error:', error);
+    res.status(500).json({ message: 'Failed to send SMS messages' });
   }
 });
 
