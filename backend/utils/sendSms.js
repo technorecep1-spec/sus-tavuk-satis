@@ -1,4 +1,10 @@
-const axios = require('axios');
+// Try to load axios, but don't fail if it's not available
+let axios = null;
+try {
+  axios = require('axios');
+} catch (error) {
+  console.log('⚠️ Axios not available, using mock SMS mode only');
+}
 
 // SMS provider configurations
 const initializeSmsProviders = () => {
@@ -51,6 +57,10 @@ const initializeSmsProviders = () => {
 
 // Send SMS via Netgsm
 const sendNetgsmSms = async (phoneNumber, message, config) => {
+  if (!axios) {
+    throw new Error('Axios not available - cannot send real SMS');
+  }
+  
   try {
     const params = new URLSearchParams({
       usercode: config.username,
@@ -85,6 +95,10 @@ const sendNetgsmSms = async (phoneNumber, message, config) => {
 
 // Send SMS via İletimerkezi
 const sendIletimerkeziSms = async (phoneNumber, message, config) => {
+  if (!axios) {
+    throw new Error('Axios not available - cannot send real SMS');
+  }
+  
   try {
     const payload = {
       username: config.username,

@@ -3,7 +3,16 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { sendBulkEmail } = require('../utils/sendEmail');
-const { sendBulkSms } = require('../utils/sendSms');
+
+// Try to load SMS functionality, but don't fail if it's not available
+let sendBulkSms = null;
+try {
+  const smsModule = require('../utils/sendSms');
+  sendBulkSms = smsModule.sendBulkSms;
+  console.log('✅ SMS module loaded successfully');
+} catch (error) {
+  console.log('⚠️ SMS module not available:', error.message);
+}
 
 const router = express.Router();
 
@@ -108,6 +117,13 @@ router.post('/send-bulk-sms', [
   body('recipients').isArray().withMessage('Recipients must be an array')
 ], async (req, res) => {
   try {
+    // Check if SMS functionality is available
+    if (!sendBulkSms) {
+      return res.status(503).json({ 
+        message: 'SMS functionality is not available. Please contact administrator.' 
+      });
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
